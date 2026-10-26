@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-montserrat), var(--font-inter), ui-sans-serif, sans-serif;
+
+  --color-brand-50: #eef5ff;
+  --color-brand-100: #dbe9ff;
+  --color-brand-200: #bfd7ff;
+  --color-brand-300: #8fbcff;
+  --color-brand-400: #5a9bff;
+  --color-brand-500: #2f7cf6;
+  --color-brand-600: #1c64e0;
+  --color-brand-700: #164fb5;
+  --color-navy-700: #173a7a;
+  --color-navy-800: #102c63;
+  --color-navy-900: #0b1f47;
+
+  --shadow-soft: 0 1px 2px rgb(16 44 99 / 0.04), 0 8px 24px -8px rgb(16 44 99 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(16 44 99 / 0.05), 0 18px 40px -12px rgb(16 44 99 / 0.22);
+
+  --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-pop-in: pop-in 0.2s ease-out both;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white text-slate-800 antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-navy-900;
+    letter-spacing: -0.015em;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), label[for] {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+  .card {
+    @apply rounded-3xl border border-slate-100 bg-white shadow-soft;
+  }
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 placeholder:text-slate-400
+      transition-colors hover:border-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 focus:outline-none
+      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500;
+  }
+  .field-error {
+    @apply mt-1.5 text-sm text-red-600;
+  }
+}
