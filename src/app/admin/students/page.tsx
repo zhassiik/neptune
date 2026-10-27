@@ -27,7 +27,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
 
   let query = supabase
     .from("profiles")
-    .select("id, full_name, email, role, created_at", { count: "exact" })
+    .select("id, full_name, email, role, created_at, blocked_at", { count: "exact" })
     .eq("role", role)
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
@@ -105,7 +105,10 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                 return (
                   <tr key={p.id} className="transition hover:bg-slate-50/70">
                     <td className="px-5 py-3.5">
-                      <div className="font-semibold text-navy-900">{p.full_name || "—"}</div>
+                      <Link href={`/admin/students/${p.id}`} className="font-semibold text-navy-900 hover:text-brand-600">
+                        {p.full_name || "—"}
+                      </Link>
+                      {(p as Profile & { blocked_at?: string | null }).blocked_at && <Badge tone="red" className="ml-2">Бұғатталған</Badge>}
                       <div className="text-slate-500">{p.email}</div>
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">{formatDateTime(p.created_at)}</td>
@@ -119,6 +122,9 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                             Нәтижелері
                           </Link>
                         )}
+                        <Link href={`/admin/students/${p.id}`} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">
+                          Құрылғылар
+                        </Link>
                         {p.id !== me?.id && <RoleToggle userId={p.id} name={p.full_name || p.email || ""} role={p.role} />}
                       </div>
                     </td>

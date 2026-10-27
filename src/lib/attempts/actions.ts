@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient, ServerConfigError } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCourseAccess } from "@/lib/access";
+import { formatDateTime } from "@/lib/utils";
 
 export interface StartState {
   error?: string;
@@ -29,13 +30,24 @@ export async function startAttempt(_prev: StartState, formData: FormData): Promi
   // courses(*) — access_mode бағаны әлі жоқ болса да (migration іске қосылмаса) сұраныс бұзылмайды
   const { data: variant, error: variantError } = await supabase
     .from("test_variants")
-    .select("id, status, time_limit_minutes, courses(*)")
+    .select("*, courses(*)")
     .eq("id", variantId.data)
-    .maybeSingle<{ id: string; status: string; time_limit_minutes: number | null; courses: { id: string; status: string; access_mode?: string } | null }>();
+    .maybeSingle<{
+      id: string;
+      status: string;
+      time_limit_minutes: number | null;
+      contest_starts_at?: string | null;
+      courses: { id: string; status: string; access_mode?: string } | null;
+    }>();
   if (variantError) console.error("[startAttempt] variant query failed", variantError.message);
   if (!variant || variant.status !== "published" || !variant.courses) return { error: "Бұл нұсқа қолжетімсіз" };
   const access = await getCourseAccess(supabase, user, { ...variant.courses, access_mode: variant.courses.access_mode ?? "open" });
   if (!access.allowed) return { error: access.reason === "not_enrolled" ? "Бұл курсқа рұқсатыңыз жоқ" : "Курс әлі ашылмаған" };
+
+  // «Апта үздігі»: нұсқа куратор ашқан уақыттан бұрын басталмайды (ерте көріп алмау үшін)
+  if (variant.contest_starts_at && Date.now() < new Date(variant.contest_starts_at).getTime() && user.profile?.role !== "admin") {
+    return { error: `Бұл нұсқа ${formatDateTime(variant.contest_starts_at)}-де ашылады (Апта үздігі)` };
+  }
 
   let admin: ReturnType<typeof createAdminClient>;
   try {

@@ -4,23 +4,34 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-montserrat), var(--font-inter), ui-sans-serif, sans-serif;
 
-  --color-brand-50: #eef5ff;
-  --color-brand-100: #dbe9ff;
-  --color-brand-200: #bfd7ff;
-  --color-brand-300: #8fbcff;
-  --color-brand-400: #5a9bff;
-  --color-brand-500: #2f7cf6;
-  --color-brand-600: #1c64e0;
-  --color-brand-700: #164fb5;
-  --color-navy-700: #173a7a;
-  --color-navy-800: #102c63;
-  --color-navy-900: #0b1f47;
+  /* Нептун көгі (планетаның азур түсі) */
+  --color-brand-50: #edf3ff;
+  --color-brand-100: #dbe7ff;
+  --color-brand-200: #bad1ff;
+  --color-brand-300: #88b1ff;
+  --color-brand-400: #5590ff;
+  --color-brand-500: #2f6bf0;
+  --color-brand-600: #2155d6;
+  --color-brand-700: #1c44ad;
+  /* Терең ғарыш */
+  --color-navy-700: #1d2c70;
+  --color-navy-800: #131d52;
+  --color-navy-900: #0a1238;
+  --color-space-950: #050a1f;
+  /* Нептун атмосферасының мұзды көгілдір жарқылы */
+  --color-neptune-200: #b8f3ff;
+  --color-neptune-300: #85eaff;
+  --color-neptune-400: #4fdcfb;
+  --color-neptune-500: #1fc3ea;
 
-  --shadow-soft: 0 1px 2px rgb(16 44 99 / 0.04), 0 8px 24px -8px rgb(16 44 99 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(16 44 99 / 0.05), 0 18px 40px -12px rgb(16 44 99 / 0.22);
+  --shadow-soft: 0 1px 2px rgb(10 18 56 / 0.04), 0 8px 24px -8px rgb(10 18 56 / 0.14);
+  --shadow-lift: 0 2px 4px rgb(10 18 56 / 0.05), 0 18px 40px -12px rgb(10 18 56 / 0.26);
+  --shadow-glow: 0 0 0 1px rgb(79 220 251 / 0.25), 0 0 40px -6px rgb(79 220 251 / 0.45);
 
   --animate-fade-in: fade-in 0.25s ease-out both;
   --animate-pop-in: pop-in 0.2s ease-out both;
+  --animate-orbit: orbit 40s linear infinite;
+  --animate-twinkle: twinkle 6s ease-in-out infinite;
 
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(6px); }
@@ -29,6 +40,13 @@
   @keyframes pop-in {
     from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes orbit {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 0.9; }
   }
 }
 
@@ -51,6 +69,12 @@
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), label[for] {
     cursor: pointer;
   }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
 }
 
 @layer components {
@@ -70,5 +94,40 @@
   }
   .field-error {
     @apply mt-1.5 text-sm text-red-600;
+  }
+
+  /* ---------- Нептун: ғарыш фоны ---------- */
+  .space-bg {
+    background:
+      radial-gradient(60rem 32rem at 85% -10%, rgb(47 107 240 / 0.38), transparent 60%),
+      radial-gradient(42rem 26rem at -5% 25%, rgb(79 220 251 / 0.16), transparent 60%),
+      radial-gradient(36rem 22rem at 50% 115%, rgb(124 92 255 / 0.2), transparent 60%),
+      linear-gradient(180deg, var(--color-space-950), var(--color-navy-900));
+    color: white;
+  }
+  /* Жұлдыздар: background-image нүктелері, абсолют қабат */
+  .stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, white 50%, transparent 51%),
+      radial-gradient(1px 1px at 120px 80px, rgb(255 255 255 / 0.8) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 210px 160px, rgb(184 243 255 / 0.9) 50%, transparent 51%),
+      radial-gradient(1px 1px at 60px 200px, rgb(255 255 255 / 0.7) 50%, transparent 51%),
+      radial-gradient(1px 1px at 260px 40px, rgb(255 255 255 / 0.6) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 170px 250px, white 50%, transparent 51%),
+      radial-gradient(1px 1px at 300px 220px, rgb(184 243 255 / 0.7) 50%, transparent 51%);
+    background-size: 320px 280px;
+    animation: var(--animate-twinkle);
+  }
+  .glass-dark {
+    @apply border border-white/10 bg-white/[0.06] backdrop-blur-md;
+  }
+  .text-neptune-gradient {
+    background: linear-gradient(90deg, var(--color-neptune-300), var(--color-brand-400) 60%, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }

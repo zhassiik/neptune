@@ -18,6 +18,18 @@ export function formatDateTime(value: string | null | undefined) {
   return dateFmt.format(new Date(value));
 }
 
+/** «қазір», «5 мин бұрын», «3 сағ бұрын», әйтпесе күні */
+export function timeAgo(value: string | null | undefined) {
+  if (!value) return "—";
+  const diff = Math.max(0, Date.now() - new Date(value).getTime());
+  const min = Math.floor(diff / 60000);
+  if (min < 2) return "қазір";
+  if (min < 60) return `${min} мин бұрын`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} сағ бұрын`;
+  return formatDateTime(value);
+}
+
 export function formatDuration(fromIso: string, toIso: string | null) {
   if (!toIso) return "—";
   const minutes = Math.max(0, Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60000));
@@ -63,4 +75,21 @@ export function uuid(): string {
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/** ISO → <input type="datetime-local"> мәні (Алматы уақыты, UTC+5) */
+export function toAlmatyInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Almaty",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+    .format(d)
+    .replace(" ", "T");
 }

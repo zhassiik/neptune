@@ -57,6 +57,8 @@ export function SecureVideoPlayer({
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recoveringRef = useRef(false);
+  /** Шексіз қайталауға жол бермеу: token 1 рет, желі қатесі 3 рет (сәтті жүктелгенде нөлге түседі) */
+  const retriesRef = useRef({ token: 0, network: 0 });
 
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState<{ message: string; denied: boolean } | null>(null);
@@ -132,19 +134,39 @@ export function SecureVideoPlayer({
           restore();
         });
         hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => setAutoHeight(hls.levels[data.level]?.height ?? null));
+        hls.on(Hls.Events.FRAG_LOADED, () => {
+          retriesRef.current = { token: 0, network: 0 };
+        });
         hls.on(Hls.Events.ERROR, (_e, data) => {
           if (!data.fatal) return;
           const code = data.response?.code;
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && (code === 401 || code === 403) && !recoveringRef.current) {
+          const retries = retriesRef.current;
+          const fail = (message: string) => {
+            console.error("[video] HLS error", data.type, data.details, code);
+            destroyHls();
+            setError({ message, denied: false });
+            setPhase("error");
+          };
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && (code === 401 || code === 403)) {
+            // Token мерзімі біткен болса — бір рет жаңартып көреміз; қайта 401/403 — домен рұқсат етілмеген
+            if (retries.token >= 1) return fail("Видеоны бұл сайтта ойнатуға рұқсат жоқ (Cloudflare-да домен рұқсат етілмеген). Әкімшіге хабарлаңыз");
+            if (recoveringRef.current) return;
+            retries.token += 1;
             recoveringRef.current = true;
             void reloadWithFreshToken().finally(() => (recoveringRef.current = false));
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
-          } else if (data.type === Hls.ErrorTypes.NETWORK_ERROR && code !== 404) {
-            hls.startLoad();
+          } else if (data.type === Hls.ErrorTypes.NETWORK_ERROR && code !== 404 && retries.network < 3) {
+            retries.network += 1;
+            setTimeout(() => hls.startLoad(), 1000 * retries.network);
           } else {
-            setError({ message: code === 404 ? "Видео әлі дайын емес немесе табылмады" : "Видеоны ойнату мүмкін болмады", denied: false });
-            setPhase("error");
+            fail(
+              code === 404
+                ? "Видео әлі дайын емес немесе табылмады"
+                : code === 0 || code === undefined
+                  ? "Видео серверіне қосылу мүмкін болмады (домен рұқсат етілмеген немесе интернет жоқ)"
+                  : "Видеоны ойнату мүмкін болмады",
+            );
           }
         });
         hls.loadSource(playback.hls);
@@ -177,6 +199,7 @@ export function SecureVideoPlayer({
   const load = useCallback(async () => {
     setPhase("loading");
     setError(null);
+    retriesRef.current = { token: 0, network: 0 };
     try {
       await attach(await fetchPlayback());
     } catch (e) {

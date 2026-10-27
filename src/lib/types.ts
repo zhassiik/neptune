@@ -12,11 +12,39 @@ export interface Profile {
   created_at: string;
 }
 
+export interface LandingStat {
+  value: string;
+  label: string;
+}
+
 export interface PlatformSettings {
   platform_name: string;
   contact_email: string | null;
   contact_phone: string | null;
   contact_address: string | null;
+  teacher_name: string;
+  /** Әр жол — бір пункт */
+  teacher_bio: string;
+  landing_stats: LandingStat[];
+  exam_countdown_title: string;
+  exam_date: string | null;
+  instagram_url: string | null;
+  telegram_url: string | null;
+  whatsapp_phone: string | null;
+  /** «Курсқа қосылу» батырмасының сілтемесі (WhatsApp т.б.) */
+  join_url: string | null;
+}
+
+export interface Testimonial {
+  id: string;
+  student_name: string;
+  score: number | null;
+  score_label: string | null;
+  text: string;
+  photo_path: string | null;
+  video_url: string | null;
+  position: number;
+  is_published: boolean;
 }
 
 export type CourseStatus = "draft" | "coming_soon" | "published";
@@ -55,6 +83,41 @@ export interface TestVariant {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  /** «Апта үздігі» (migration 20261031 болмаса — undefined) */
+  week_id?: string | null;
+  contest_starts_at?: string | null;
+  contest_ends_at?: string | null;
+  /** Черновик және конспект: Google Classroom сілтемесі және дедлайн */
+  classroom_url?: string | null;
+  homework_deadline?: string | null;
+}
+
+export interface ContestWeek {
+  id: string;
+  course_id: string;
+  title: string;
+  position: number;
+  is_published: boolean;
+}
+
+export type HomeworkStatus = "on_time" | "late" | "missing";
+
+export interface HomeworkCheck {
+  variant_id: string;
+  student_id: string;
+  draft_status: HomeworkStatus | null;
+  notes_status: HomeworkStatus | null;
+}
+
+export interface LeaderboardRow {
+  rank: number;
+  student_id: string | null;
+  full_name: string;
+  test_points: number;
+  homework_points: number;
+  total: number;
+  contest_tests: number;
+  is_me: boolean;
 }
 
 export interface TestAttempt {

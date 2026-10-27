@@ -2,10 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { DEVICE_MESSAGES } from "@/lib/devices/config";
 
 export const metadata: Metadata = { title: "Кіру" };
 
 const notices: Record<string, string> = {
+  ...DEVICE_MESSAGES,
   confirm: "Email расталған болуы мүмкін — email мен құпиясөзіңізбен кіріп көріңіз. Кіре алмасаңыз, сілтеме ескірген: қайта тіркеліп, жаңа хатты сол браузерде ашыңыз.",
 };
 

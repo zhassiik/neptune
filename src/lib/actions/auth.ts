@@ -6,12 +6,20 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { humanizeError } from "@/lib/utils";
+import { clientIpFromHeaders } from "@/lib/devices/network";
+import { parseUserAgent } from "@/lib/devices/ua";
+import { attachDeviceToSession, releaseCurrentDevice } from "@/lib/devices/server";
+import { CAPTCHA_AFTER_FAILURES, hashEmail, loginRateRecord, loginRateStatus } from "@/lib/security/login-guard";
+import { turnstileEnabled, verifyTurnstile } from "@/lib/security/turnstile";
+import { notifyNewDevice } from "@/lib/security/notify";
 
 export interface AuthState {
   error?: string;
   fieldErrors?: Record<string, string>;
   message?: string;
   values?: Record<string, string>;
+  /** Cloudflare Turnstile CAPTCHA көрсету керек */
+  captchaRequired?: boolean;
 }
 
 /** Ашық redirect-тен қорғау: тек ішкі жолдарға рұқсат */
@@ -39,11 +47,41 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { fieldErrors: collectFieldErrors(parsed.error), values };
 
+  const hdrs = await headers();
+  const ip = clientIpFromHeaders(hdrs);
+  const emailHash = hashEmail(parsed.data.email);
+
+  // Rate limit: email бойынша 15 минутта 5, IP бойынша 30 сәтсіз әрекет
+  const rate = await loginRateStatus(emailHash, ip);
+  if (rate && rate.retryAfter > 0) {
+    return { error: `Тым көп сәтсіз әрекет жасалды. ${Math.max(1, Math.ceil(rate.retryAfter / 60))} минуттан кейін қайталаңыз`, values };
+  }
+  const captchaOn = turnstileEnabled() && (rate?.failures ?? 0) >= CAPTCHA_AFTER_FAILURES;
+  if (captchaOn && !(await verifyTurnstile(formData.get("cf-turnstile-response"), ip))) {
+    return { error: "Робот емес екеніңізді растаңыз", captchaRequired: true, values };
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: humanizeError(error), values };
+  if (error) {
+    if (/Invalid login credentials/i.test(error.message)) await loginRateRecord(emailHash, ip, false);
+    const failures = (rate?.failures ?? 0) + 1;
+    return { error: humanizeError(error), values, captchaRequired: turnstileEnabled() && failures >= CAPTCHA_AFTER_FAILURES };
+  }
+  await loginRateRecord(emailHash, ip, true);
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
+  // Құрылғы бақылауы: лимит толса — сессия бірден жабылады
+  const device = await attachDeviceToSession(data.user.id, data.session?.access_token);
+  if (!device.ok) {
+    await supabase.auth.signOut({ scope: "local" });
+    return { error: device.message, values };
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", data.user.id).maybeSingle();
+  if (device.isNew && data.user.email) {
+    const info = parseUserAgent(hdrs.get("user-agent"));
+    void notifyNewDevice({ to: data.user.email, name: profile?.full_name ?? "", ...info, location: null });
+  }
   revalidatePath("/", "layout");
 
   const next = formData.get("next");
@@ -94,13 +132,23 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     };
   }
 
+  const device = await attachDeviceToSession(data.user!.id, data.session.access_token);
+  if (!device.ok) {
+    await supabase.auth.signOut({ scope: "local" });
+    return { error: device.message, values };
+  }
+
   revalidatePath("/", "layout");
   redirect(formData.get("next") ? safeNext(formData.get("next")) : "/courses");
 }
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const [{ data: userData }, { data: claims }] = await Promise.all([supabase.auth.getUser(), supabase.auth.getClaims()]);
+  const sessionId = typeof claims?.claims?.session_id === "string" ? claims.claims.session_id : null;
+  await supabase.auth.signOut({ scope: "local" });
+  // Шыққан құрылғының орны босайды (лимитке есептелмейді)
+  if (userData.user) await releaseCurrentDevice(userData.user.id, sessionId);
   revalidatePath("/", "layout");
   redirect("/");
 }

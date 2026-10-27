@@ -68,6 +68,10 @@ describe("playbackUrls / allowedOriginsFor", () => {
   it("production: тек өз домені; development: + localhost:3000; қосымша тізім", () => {
     expect(allowedOriginsFor({ appUrl: "https://neptune-ubt.kz", nodeEnv: "production", extra: "" })).toEqual(["neptune-ubt.kz"]);
     expect(allowedOriginsFor({ appUrl: "https://neptune-ubt.kz", nodeEnv: "development", extra: undefined })).toEqual(["neptune-ubt.kz", "localhost:3000"]);
+    expect(allowedOriginsFor({ appUrl: "http://localhost:3000", nodeEnv: "production", extra: "", vercelProductionUrl: "neptune-pink-three.vercel.app" })).toEqual([
+      "localhost:3000",
+      "neptune-pink-three.vercel.app",
+    ]);
     expect(allowedOriginsFor({ appUrl: undefined, nodeEnv: "production", extra: "http://192.168.0.107:3000/, www.neptune-ubt.kz" })).toEqual([
       "192.168.0.107:3000",
       "www.neptune-ubt.kz",

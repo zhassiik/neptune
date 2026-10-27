@@ -14,6 +14,8 @@ import { EmptyState } from "@/components/ui/States";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import type { TestVariant } from "@/lib/types";
+import { getCourseWeeks, getLeaderboard, getMyHomework } from "@/lib/weekly-server";
+import { Leaderboard } from "@/components/weekly/Leaderboard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: course?.title ?? "Курс" };
 }
 
-export default async function CoursePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function CoursePage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ week?: string }> }) {
+  const [{ slug }, { week: weekParam }] = await Promise.all([params, searchParams]);
   const [course, user] = await Promise.all([getCourseBySlug(slug), getCurrentUser()]);
   if (!course) notFound();
   const isAdmin = user?.profile?.role === "admin";
@@ -66,6 +68,15 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
       }
     }
   }
+
+  // «Апта үздігі»: апталар, рейтинг (топ-5 + өз орны), оқушының черновик/конспект бағалары
+  const weeks = open || isAdmin ? await getCourseWeeks(supabase, course.id) : [];
+  const activeWeek = weeks.find((w) => w.id === weekParam) ?? weeks[0] ?? null;
+  const [leaderboard, homework] = await Promise.all([
+    user && activeWeek && !locked ? getLeaderboard(supabase, activeWeek.id, 5) : Promise.resolve([]),
+    user && !locked ? getMyHomework(supabase, user.id, variants.map((v) => v.id)) : Promise.resolve({} as Awaited<ReturnType<typeof getMyHomework>>),
+  ]);
+  const weekTitles = new Map(weeks.map((w) => [w.id, w.title]));
 
   const videos = variants.filter(hasVideo).length;
   const price = formatPrice(course.price);
@@ -115,6 +126,18 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
           </Alert>
         )}
 
+        {activeWeek && (
+          <div id="top" className="mt-8 scroll-mt-24">
+            {user && !locked ? (
+              <Leaderboard weeks={weeks} activeWeekId={activeWeek.id} rows={leaderboard} weekHref={(id) => `/courses/${course.slug}?week=${id}#top`} />
+            ) : (
+              <Alert tone="info">
+                <b>Апта үздігі</b> рейтингін көру үшін {user ? "курсқа рұқсат алыңыз" : "жүйеге кіріңіз"}.
+              </Alert>
+            )}
+          </div>
+        )}
+
         <div className="mt-8 space-y-4">
           {!open && !isAdmin ? (
             <EmptyState icon={Clock} title="Курс жақында ашылады" description="Курс ашылғанда нұсқалар мен видео-талдаулар осы жерде пайда болады." />
@@ -122,7 +145,18 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
             <EmptyState icon={FileQuestion} title="Әзірге жарияланған нұсқа жоқ" description="Жаңа нұсқа жарияланғанда, ол осы жерде пайда болады." />
           ) : (
             variants.map((v, i) => (
-              <VariantSection key={v.id} variant={v} courseSlug={course.slug} progress={progress[v.id]} loggedIn={!!user} locked={locked} defaultOpen={i === 0} />
+              <VariantSection
+                key={v.id}
+                variant={v}
+                courseSlug={course.slug}
+                progress={progress[v.id]}
+                loggedIn={!!user}
+                locked={locked}
+                defaultOpen={i === 0}
+                homework={homework[v.id]}
+                weekTitle={v.week_id ? weekTitles.get(v.week_id) : undefined}
+                isAdmin={isAdmin}
+              />
             ))
           )}
         </div>

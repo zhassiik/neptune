@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Field, Input } from "@/components/ui/Field";
+import { Field, Input, Textarea } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Alert } from "@/components/ui/Alert";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -14,7 +14,7 @@ function Status({ state }: { state: FormState }) {
   return null;
 }
 
-export function PlatformSettingsForm({ initial }: { initial: PlatformSettings }) {
+export function PlatformSettingsForm({ initial, deviceLimit }: { initial: PlatformSettings; deviceLimit: { limit: number; fromEnv: boolean } }) {
   const [state, action] = useActionState(updatePlatformSettings, {});
   const fe = state.fieldErrors ?? {};
   return (
@@ -31,8 +31,16 @@ export function PlatformSettingsForm({ initial }: { initial: PlatformSettings })
           <Input id="contact_phone" name="contact_phone" type="tel" defaultValue={initial.contact_phone ?? ""} invalid={!!fe.contact_phone} />
         </Field>
       </div>
-      <Field id="contact_address" label="Мекенжай" error={fe.contact_address}>
-        <Input id="contact_address" name="contact_address" defaultValue={initial.contact_address ?? ""} invalid={!!fe.contact_address} />
+      <Field id="contact_address" label="Мекенжай" error={fe.contact_address} hint="Бірнеше жолға жазуға болады">
+        <Textarea id="contact_address" name="contact_address" defaultValue={initial.contact_address ?? ""} rows={3} maxLength={200} invalid={!!fe.contact_address} />
+      </Field>
+      <Field
+        id="max_devices_per_user"
+        label="Бір аккаунтқа рұқсат етілген құрылғы саны"
+        error={fe.max_devices_per_user}
+        hint={deviceLimit.fromEnv ? `Қазір MAX_DEVICES_PER_USER env айнымалысы қолданылады (${deviceLimit.limit}) — бұл мән оны басып оза алмайды` : "1–20. Әкімшілерге лимит қолданылмайды"}
+      >
+        <Input id="max_devices_per_user" name="max_devices_per_user" type="number" min={1} max={20} defaultValue={deviceLimit.fromEnv ? 4 : deviceLimit.limit} invalid={!!fe.max_devices_per_user} className="w-32" />
       </Field>
       <SubmitButton pendingText="Сақталуда...">Сақтау</SubmitButton>
     </form>

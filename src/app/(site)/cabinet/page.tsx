@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, CircleDashed, ClipboardList, Clock, MinusCircle, PlayCircle, Trophy, XCircle } from "lucide-react";
+import { ArrowRight, ShieldCheck, CheckCircle2, CircleDashed, ClipboardList, Clock, MinusCircle, PlayCircle, Trophy, XCircle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/States";
@@ -9,6 +9,9 @@ import { ButtonLink } from "@/components/ui/Button";
 import { StartAttemptButton } from "@/components/courses/StartAttemptButton";
 import { formatDateTime, formatDuration, percent } from "@/lib/utils";
 import { hasVideo, variantHeading } from "@/lib/video";
+import { getLeaderboard } from "@/lib/weekly-server";
+import { Leaderboard } from "@/components/weekly/Leaderboard";
+import type { ContestWeek } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Менің нәтижелерім" };
 export const dynamic = "force-dynamic";
@@ -56,6 +59,16 @@ export default async function CabinetPage() {
   const best = submitted.reduce((m, a) => Math.max(m, a.total_score ?? 0), 0);
   const avg = submitted.length ? Math.round(submitted.reduce((s, a) => s + (a.total_score ?? 0), 0) / submitted.length) : 0;
 
+  // «Апта үздігі»: соңғы жарияланған апта (кесте жоқ болса — көрсетілмейді)
+  const { data: latestWeek } = await supabase
+    .from("contest_weeks")
+    .select("id, course_id, title, position, is_published, courses(slug)")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<ContestWeek & { courses: { slug: string } | null }>();
+  const leaderboard = latestWeek ? await getLeaderboard(supabase, latestWeek.id, 5) : [];
+
   // Әр нұсқаның нешінші талпынысы екенін көрсету үшін (ескіден жаңаға қарай нөмірлейміз)
   const attemptNumber = new Map<string, number>();
   const perVariant = new Map<string, number>();
@@ -68,7 +81,12 @@ export default async function CabinetPage() {
   return (
     <div className="bg-slate-50/60">
       <div className="container-page py-10 sm:py-14">
-        <h1 className="text-3xl font-extrabold sm:text-4xl">Менің нәтижелерім</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Менің нәтижелерім</h1>
+          <ButtonLink href="/cabinet/devices" variant="outline" size="sm">
+            <ShieldCheck className="size-4" /> Менің құрылғыларым
+          </ButtonLink>
+        </div>
         <p className="mt-2 text-slate-500">
           Сәлем, <b className="text-slate-700">{user.profile?.full_name || user.email}</b>! Мұнда тапсырған барлық нұсқаларыңыз бен қателеріңіздің талдауы сақталады.
         </p>
@@ -90,6 +108,23 @@ export default async function CabinetPage() {
             </div>
           ))}
         </div>
+
+        {latestWeek && (
+          <div className="mt-8">
+            <Leaderboard
+              weeks={[latestWeek]}
+              activeWeekId={latestWeek.id}
+              rows={leaderboard}
+              footer={
+                latestWeek.courses && (
+                  <a href={`/courses/${latestWeek.courses.slug}#top`} className="text-sm font-semibold text-brand-600 hover:underline">
+                    Барлық апталар және нұсқалар →
+                  </a>
+                )
+              }
+            />
+          </div>
+        )}
 
         {active.length > 0 && (
           <section className="mt-10">

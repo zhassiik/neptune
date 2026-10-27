@@ -137,12 +137,17 @@ export function desiredAllowedOrigins() {
     appUrl: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL,
     nodeEnv: process.env.NODE_ENV,
     extra: process.env.CLOUDFLARE_STREAM_EXTRA_ORIGINS,
+    vercelProductionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
   });
 }
 
-/** requireSignedURLs=true және allowedOrigins-ті видеоға орнатады */
+/**
+ * requireSignedURLs=true және allowedOrigins-ті видеоға орнатады.
+ * Бұрынғы домендер сақталады (біріктіріледі): production-да басқанда localhost өшпейді, локалда басқанда production домені өшпейді.
+ */
 export async function secureVideo(uid: string) {
-  const allowedOrigins = desiredAllowedOrigins();
+  const current = await getVideoInfo(uid).catch(() => null);
+  const allowedOrigins = [...new Set([...(current?.allowedOrigins ?? []), ...desiredAllowedOrigins()])];
   const result = await cfFetch<CfVideo>(`/stream/${uid}`, {
     method: "POST",
     body: JSON.stringify({ uid, requireSignedURLs: true, allowedOrigins }),

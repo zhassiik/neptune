@@ -124,7 +124,11 @@ export default async function ResultPage({
             <span className="inline-flex items-center gap-1.5 font-semibold">
               <EyeOff className="size-4" /> Дұрыс жауаптар жасырылған
             </span>
-            <p className="mt-0.5">Мұғалім бұл нұсқа үшін дұрыс жауаптарды көрсетуді шектеген. Әр сұрақ бойынша алған балыңызды көре аласыз.</p>
+            <p className="mt-0.5">
+              {review.answersHiddenUntil
+                ? `«Апта үздігі» жүріп жатыр: дұрыс жауаптар мен түсіндірмелер ${formatDateTime(review.answersHiddenUntil)}-ден кейін ашылады. Қазір әр сұрақ бойынша балыңызды көре аласыз.`
+                : "Мұғалім бұл нұсқа үшін дұрыс жауаптарды көрсетуді шектеген. Әр сұрақ бойынша алған балыңызды көре аласыз."}
+            </p>
           </Alert>
         )}
         <ReviewList questions={questions} showAnswers={showAnswers} initialFilter={filter === "mistakes" ? "mistakes" : "all"} />

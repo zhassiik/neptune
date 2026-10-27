@@ -9,6 +9,8 @@ export interface AttemptReview {
   variant: Pick<TestVariant, "id" | "title" | "subject" | "position" | "show_correct_answers" | "video_url" | "video_provider" | "cloudflare_video_uid"> & { courses: { slug: string; title: string } | null };
   student: { full_name: string; email: string | null } | null;
   showAnswers: boolean;
+  /** «Апта үздігі» аралығы біткенше жауаптар жасырын: аралықтың аяқталу уақыты */
+  answersHiddenUntil: string | null;
   questions: ReviewQuestion[];
 }
 
@@ -36,7 +38,11 @@ export async function loadAttemptReview(attemptId: string, viewer: { id: string;
   ]);
   if (!variant) return null;
 
-  const showAnswers = variant.show_correct_answers || viewer.isAdmin;
+  // «Апта үздігі»: конкурс аралығы біткенше дұрыс жауаптар жасырылады (ерте тапсырғандар басқаларға жібермеуі үшін)
+  const contestEnds = (variant as { contest_ends_at?: string | null }).contest_ends_at;
+  const contestRunning = !!contestEnds && Date.now() < new Date(contestEnds).getTime() + 2 * 60_000;
+  const showAnswers = viewer.isAdmin || (variant.show_correct_answers && !contestRunning);
+  const answersHiddenUntil = !viewer.isAdmin && variant.show_correct_answers && contestRunning ? contestEnds : null;
   const urls = await signImageUrls(admin, raw.map((q) => q.image_path));
   const scoreMap = new Map((scores ?? []).map((s) => [s.question_id, s]));
   const answerMap = new Map((answers ?? []).map((a) => [a.question_id, a]));
@@ -57,5 +63,5 @@ export async function loadAttemptReview(attemptId: string, viewer: { id: string;
     };
   });
 
-  return { attempt, variant, student, showAnswers, questions };
+  return { attempt, variant, student, showAnswers, answersHiddenUntil, questions };
 }

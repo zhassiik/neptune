@@ -19,6 +19,10 @@ drop policy if exists "course-covers: admin оқиды" on storage.objects;
 drop policy if exists "course-covers: admin жүктейді" on storage.objects;
 drop policy if exists "course-covers: admin өзгертеді" on storage.objects;
 drop policy if exists "course-covers: admin өшіреді" on storage.objects;
+drop policy if exists "site-media: admin оқиды" on storage.objects;
+drop policy if exists "site-media: admin жүктейді" on storage.objects;
+drop policy if exists "site-media: admin өзгертеді" on storage.objects;
+drop policy if exists "site-media: admin өшіреді" on storage.objects;
 
 drop table if exists
   public.attempt_scores,
@@ -28,14 +32,29 @@ drop table if exists
   public.matching_options,
   public.answer_options,
   public.questions,
+  public.homework_checks,
   public.course_enrollments,
+  public.testimonials,
+  public.user_devices,
+  public.revoked_sessions,
+  public.login_attempts,
   public.test_variants,
+  public.contest_weeks,
   public.courses,
   public.platform_settings,
   public.profiles
 cascade;
 
+drop function if exists public.week_leaderboard cascade;
+drop function if exists public.homework_points cascade;
 drop function if exists public.has_course_access cascade;
+drop function if exists public.register_device cascade;
+drop function if exists public.revoke_user_sessions cascade;
+drop function if exists public.check_device_session cascade;
+drop function if exists public.is_session_authorized cascade;
+drop function if exists public.current_session_id cascade;
+drop function if exists public.login_rate_status cascade;
+drop function if exists public.login_rate_record cascade;
 drop function if exists public.finalize_attempt cascade;
 drop function if exists public.save_question cascade;
 drop function if exists public.move_question_to_position cascade;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { saveAnswersSchema } from "@/lib/attempts/validation";
 import { AttemptError, getOwnAttempt, submitAttempt } from "@/lib/attempts/server";
@@ -9,11 +9,9 @@ import { AttemptError, getOwnAttempt, submitAttempt } from "@/lib/attempts/serve
 export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Жүйеге кіріңіз" }, { status: 401 });
+    // getCurrentUser: аккаунт + белсенді, бұғатталмаған құрылғы тексерісі
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Сессия жарамсыз. Қайта кіріңіз", code: "session" }, { status: 401 });
 
     const body = saveAnswersSchema.safeParse((await request.json().catch(() => null)) ?? { answers: [] });
     if (!body.success) return NextResponse.json({ error: "Сұраныс форматы дұрыс емес" }, { status: 400 });

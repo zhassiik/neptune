@@ -6,6 +6,9 @@ import { Field, Input } from "@/components/ui/Field";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Alert } from "@/components/ui/Alert";
 import { PasswordInput } from "./PasswordInput";
+import { Turnstile } from "./Turnstile";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
   const [state, action] = useActionState<AuthState, FormData>(signIn, {});
@@ -22,6 +25,7 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
       <Field id="password" label="Құпиясөз" error={fe.password}>
         <PasswordInput id="password" name="password" autoComplete="current-password" placeholder="••••••••" invalid={!!fe.password} required />
       </Field>
+      {state.captchaRequired && TURNSTILE_SITE_KEY && <Turnstile key={JSON.stringify(state)} siteKey={TURNSTILE_SITE_KEY} />}
       <SubmitButton className="w-full" size="lg" pendingText="Кіруде...">
         Кіру
       </SubmitButton>

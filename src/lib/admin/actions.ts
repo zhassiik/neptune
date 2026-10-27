@@ -350,11 +350,16 @@ const settingsSchema = z.object({
   contact_email: z.union([z.literal(""), z.string().trim().email("Email форматы дұрыс емес")]),
   contact_phone: z.string().trim().max(40, "Телефон тым ұзын"),
   contact_address: z.string().trim().max(200, "Мекенжай тым ұзын"),
+  max_devices_per_user: z
+    .string()
+    .trim()
+    .transform(Number)
+    .refine((v) => Number.isInteger(v) && v >= 1 && v <= 20, "Құрылғы саны 1–20 аралығында болуы керек"),
 });
 
 export async function updatePlatformSettings(_prev: FormState, fd: FormData): Promise<FormState> {
   await assertAdmin();
-  const parsed = settingsSchema.safeParse(Object.fromEntries(["platform_name", "contact_email", "contact_phone", "contact_address"].map((k) => [k, String(fd.get(k) ?? "")])));
+  const parsed = settingsSchema.safeParse(Object.fromEntries(["platform_name", "contact_email", "contact_phone", "contact_address", "max_devices_per_user"].map((k) => [k, String(fd.get(k) ?? "4")])));
   if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
 
   const supabase = await createClient();
@@ -365,6 +370,7 @@ export async function updatePlatformSettings(_prev: FormState, fd: FormData): Pr
       contact_email: parsed.data.contact_email || null,
       contact_phone: parsed.data.contact_phone || null,
       contact_address: parsed.data.contact_address || null,
+      max_devices_per_user: parsed.data.max_devices_per_user,
     })
     .eq("id", 1);
   if (error) return { error: humanizeError(error) };
@@ -595,4 +601,132 @@ export async function revokeCourseAccess(courseId: string, studentId: string): P
   if (error) return { error: humanizeError(error) };
   revalidatePath(`/admin/courses/${courseId}`);
   return { ok: true, message: "Рұқсат алынды" };
+}
+
+/* =====================================================================
+ * Лендинг баптаулары
+ * ===================================================================== */
+
+const optionalUrl = (re: RegExp, message: string) =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .refine((v) => !v || re.test(v), message)
+    .transform((v) => v || null);
+
+const landingSchema = z.object({
+  teacher_name: z.string().trim().min(2, "Аты-жөнін енгізіңіз").max(80, "Тым ұзын"),
+  teacher_bio: z.string().trim().min(2, "Кемінде бір жол жазыңыз").max(1000, "Тым ұзын"),
+  exam_countdown_title: z.string().trim().min(3, "Мәтінді енгізіңіз").max(120, "Тым ұзын"),
+  exam_date: z
+    .string()
+    .trim()
+    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v), "Күн мен уақытты таңдаңыз")
+    // Админ Алматы уақытымен енгізеді (UTC+5)
+    .transform((v) => (v ? `${v}:00+05:00` : null)),
+  instagram_url: optionalUrl(/^https:\/\/(www\.)?instagram\.com\//, "Instagram сілтемесі https://www.instagram.com/... түрінде болуы керек"),
+  telegram_url: optionalUrl(/^https:\/\/t\.me\//, "Telegram сілтемесі https://t.me/... түрінде болуы керек"),
+  whatsapp_phone: optionalUrl(/^\+?[0-9 ()-]{7,20}$/, "WhatsApp нөмірі: +7 747 000 00 00"),
+  join_url: optionalUrl(/^https:\/\/\S+$/, "Сілтеме https:// деп басталуы керек (мысалы, https://wa.me/77471401404)"),
+});
+
+export async function updateLandingSettings(_prev: FormState, fd: FormData): Promise<FormState> {
+  await assertAdmin();
+  const parsed = landingSchema.safeParse(
+    Object.fromEntries(
+      ["teacher_name", "teacher_bio", "exam_countdown_title", "exam_date", "instagram_url", "telegram_url", "whatsapp_phone", "join_url"].map((k) => [k, String(fd.get(k) ?? "")]),
+    ),
+  );
+  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+
+  const stats: { value: string; label: string }[] = [];
+  for (let i = 0; i < 3; i++) {
+    const value = String(fd.get(`stat_value_${i}`) ?? "").trim().slice(0, 12);
+    const label = String(fd.get(`stat_label_${i}`) ?? "").trim().slice(0, 80);
+    if (value && label) stats.push({ value, label });
+    else if (value || label) return { fieldErrors: { [`stat_${i}`]: "Көрсеткіштің екі өрісін де толтырыңыз (немесе екеуін де бос қалдырыңыз)" } };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({ ...parsed.data, landing_stats: stats })
+    .eq("id", 1);
+  if (error) return { error: humanizeError(error) };
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Басты бет баптаулары сақталды" };
+}
+
+/* =====================================================================
+ * Оқушылардың пікірлері (лендинг)
+ * ===================================================================== */
+
+const testimonialSchema = z.object({
+  student_name: z.string().trim().min(2, "Оқушының атын жазыңыз").max(80, "Тым ұзын"),
+  score: optionalInt(0, 140, "Балл 0–140 аралығында болуы керек"),
+  score_label: z.string().trim().max(40, "Тым ұзын").transform((v) => v || null),
+  text: z.string().trim().min(10, "Пікір мәтіні кемінде 10 таңба").max(3000, "Тым ұзын"),
+  video_url: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => !v || parseVideoUrl(v) !== null || /^https:\/\/(www\.)?instagram\.com\//.test(v), "YouTube, Vimeo, Kinescope, .mp4 немесе Instagram сілтемесі")
+    .transform((v) => v || null),
+  photo_path: z
+    .string()
+    .regex(/^(testimonials\/[\w-]+\.(webp|jpg|png))?$/, "Сурет жолы дұрыс емес")
+    .transform((v) => v || null),
+  position: z
+    .string()
+    .trim()
+    .transform((v) => Number(v || 1))
+    .refine((v) => Number.isInteger(v) && v >= 1 && v <= 1000, "Реті 1–1000"),
+  is_published: z.boolean(),
+});
+
+function readTestimonial(fd: FormData) {
+  return testimonialSchema.safeParse({
+    ...Object.fromEntries(["student_name", "score", "score_label", "text", "video_url", "photo_path", "position"].map((k) => [k, String(fd.get(k) ?? "")])),
+    is_published: fd.get("is_published") === "on",
+  });
+}
+
+export async function createTestimonial(_prev: FormState, fd: FormData): Promise<FormState> {
+  await assertAdmin();
+  const parsed = readTestimonial(fd);
+  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  const supabase = await createClient();
+  const { error } = await supabase.from("testimonials").insert(parsed.data);
+  if (error) return { error: humanizeError(error) };
+  revalidatePath("/", "layout");
+  redirect("/admin/testimonials?saved=1");
+}
+
+export async function updateTestimonial(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  await assertAdmin();
+  if (!uuid.safeParse(id).success) return { error: "Пікір табылмады" };
+  const parsed = readTestimonial(fd);
+  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  const supabase = await createClient();
+  const { data: prev } = await supabase.from("testimonials").select("photo_path").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("testimonials").update(parsed.data).eq("id", id);
+  if (error) return { error: humanizeError(error) };
+  if (prev?.photo_path && prev.photo_path !== parsed.data.photo_path) {
+    await supabase.storage.from("site-media").remove([prev.photo_path]);
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Пікір сақталды" };
+}
+
+export async function deleteTestimonial(id: string): Promise<FormState> {
+  await assertAdmin();
+  if (!uuid.safeParse(id).success) return { error: "Пікір табылмады" };
+  const supabase = await createClient();
+  const { data: prev } = await supabase.from("testimonials").select("photo_path").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("testimonials").delete().eq("id", id);
+  if (error) return { error: humanizeError(error) };
+  if (prev?.photo_path) await supabase.storage.from("site-media").remove([prev.photo_path]);
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Пікір өшірілді" };
 }

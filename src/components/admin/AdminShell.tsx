@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, FilePlus2, Files, Home, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { BarChart3, BookOpen, FilePlus2, Files, Home, LayoutDashboard, LogOut, MessageSquareQuote, Settings, Trophy, Users } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 import { ToastProvider } from "./Toast";
+import { SessionGuard } from "@/components/devices/SessionGuard";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -16,6 +17,8 @@ const NAV = [
   { href: "/admin/variants/new", label: "Жаңа нұсқа қосу", icon: FilePlus2, exact: true },
   { href: "/admin/students", label: "Оқушылар", icon: Users, exact: false },
   { href: "/admin/results", label: "Нәтижелер", icon: BarChart3, exact: false },
+  { href: "/admin/weekly", label: "Апта үздігі", icon: Trophy, exact: false },
+  { href: "/admin/testimonials", label: "Пікірлер", icon: MessageSquareQuote, exact: false },
   { href: "/admin/settings", label: "Баптаулар", icon: Settings, exact: false },
 ];
 
@@ -26,6 +29,7 @@ export function AdminShell({ children, userName, platformName }: { children: Rea
 
   return (
     <div className="min-h-dvh bg-slate-50/70 lg:grid lg:grid-cols-[260px_1fr]">
+      <SessionGuard />
       {/* Десктоп sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-slate-100 bg-white p-5 lg:flex">
         <Logo name={platformName} compact />

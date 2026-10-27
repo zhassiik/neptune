@@ -80,21 +80,26 @@ export function playbackUrls(customerCode: string, token: string) {
 
 /**
  * Cloudflare-да рұқсат етілетін домендер (allowedOrigins):
- * production домені + development кезінде localhost:3000 + қосымша тізім.
+ * production домені (NEXT_PUBLIC_APP_URL) + Vercel-дің өз домені
+ * + development кезінде localhost:3000 + қосымша тізім.
  */
 export function allowedOriginsFor({
   appUrl,
   nodeEnv,
   extra,
+  vercelProductionUrl,
 }: {
   appUrl: string | undefined;
   nodeEnv: string | undefined;
   extra: string | undefined;
+  /** Vercel жүйелік айнымалысы VERCEL_PROJECT_PRODUCTION_URL (мысалы, neptune.vercel.app) */
+  vercelProductionUrl?: string | undefined;
 }) {
   const origins = new Set<string>();
-  if (appUrl) {
+  for (const url of [appUrl, vercelProductionUrl && `https://${vercelProductionUrl.replace(/^https?:\/\//, "")}`]) {
+    if (!url) continue;
     try {
-      const host = new URL(appUrl).host;
+      const host = new URL(url).host;
       if (host) origins.add(host);
     } catch {
       /* қате URL — елемейміз */
