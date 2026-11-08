@@ -56,6 +56,13 @@ Dashboard → **SQL Editor** → **New query** → `supabase/migrations/` іші
 3. `20261027000001_branding_covers.sql` — платформа атауы (Neptune UBT | Жазира Тұрғымбай) және үш курстың мұқабалары (`public/covers/`)
 4. `20261028000001_cloudflare_stream_access.sql` — Cloudflare Stream видеолары (`video_provider`, `cloudflare_video_uid`, `video_status`) және курсқа рұқсат (`courses.access_mode`, `course_enrollments`)
 5. `20261029000001_device_control.sql` — құрылғы бақылауы (`user_devices`, `revoked_sessions`, `login_attempts`), сессияға байланған RLS, rate limit
+6. `20261030000001_landing.sql` — басты бет баптаулары, пікірлер
+7. `20261031000001_weekly_contest.sql` — черновик/конспект белгілері (`homework_checks`), дедлайн (бұрынғы «Апта үздігі» кестелері де бар — сайт оларды енді қолданбайды)
+8. `20261107000001_stream_uploads.sql` — видеоны админ-панельден жүктеу (`stream_videos`), мұғалім рөлі (`teacher`, `course_teachers`)
+9. `20261108000001_homework_links.sql` — черновик пен конспекттің бөлек Classroom сілтемелері (`draft_url`, `notes_url`)
+10. `20261110000001_graduates.sql` — басты беттегі «Neptune курсының түлектерінің нәтижелері» (фото, пікір, сертификат)
+11. `20261111000001_course_modules.sql` — курс құрылымы: кіріспе видео, ғаламшар-блоктар (`course_modules`), сабақтар (`module_lessons`), еркін тесттер (`test_variants.kind = 'practice'`)
+12. `20261112000001_curators.sql` — 3 аккаунт түрі: әкімші, куратор, оқушы. `teacher` → `curator`, `course_teachers` → `course_curators`; куратор тек өз курстарындағы оқушылардың нәтижесін көреді және черновик/конспектке белгі қояды; видео — тек әкімші; gmail бойынша шақыру (`curator_invites`)
 
 **B нұсқасы — Supabase CLI:**
 
@@ -98,7 +105,8 @@ Dashboard → **Authentication → URL Configuration**:
 
 Email растау: **Authentication → Providers → Email → Confirm email**. Қосулы болса, оқушы тіркелгеннен кейін поштадағы сілтемені басуы керек. Локалда тез тексеру үшін оны уақытша өшіруге болады.
 
-> Қазақша email хаттары үшін: **Authentication → Email Templates** бөлімінде шаблон мәтінін аударыңыз.
+> Қазақша email хаттары үшін: **Authentication → Emails → Templates → Confirm signup** — тақырып: `Neptune UBT — тіркелуді растаңыз`, мәтін: `supabase/email-templates/confirm-signup.html` файлының ішіндегісі.
+> Хат «Neptune UBT» атынан келуі үшін: **Authentication → Emails → SMTP Settings** → өз SMTP (мысалы, Resend: `smtp.resend.com`, порт `465`, username `resend`, password — Resend API кілті), Sender name: `Neptune UBT`, Sender email: өз доменіңіздегі адрес.
 
 ### 5. Әкімші (мұғалім) тағайындау
 
@@ -169,6 +177,16 @@ Cloudflare кілттері ешқашан браузерге жіберілме
    Шыққан екі жолды (`CLOUDFLARE_STREAM_SIGNING_KEY_ID`, `CLOUDFLARE_STREAM_SIGNING_PRIVATE_KEY`) `.env.local`-ға қойып, серверді қайта іске қосыңыз.
 6. **Админ-панель → Нұсқалар → нұсқа → Нұсқа баптаулары → Видео-талдау → «Cloudflare Stream (қорғалған)»** → Video UID → Сақтау.
 7. Сол беттегі **«Видео-талдау: Cloudflare Stream»** панелінде **«Қорғауды орнату»** батырмасын басыңыз. Ол `requireSignedURLs` пен `allowedOrigins`-ті орнатады: production домені (`NEXT_PUBLIC_APP_URL`), development кезінде `localhost:3000` және `CLOUDFLARE_STREAM_EXTRA_ORIGINS`. Содан кейін «Preview» арқылы тексеріңіз.
+
+### Видеоны сайттан тікелей жүктеу (UID көшірусіз)
+
+Нұсқа редакторындағы **«Сабақ видеосы»** бөлімі (тек әкімшіге): **«Видео жүктеу»** → файл → прогресс → «Cloudflare видеоны өңдеп жатыр» → «Видео көруге дайын».
+
+- Файл браузерден **тікелей Cloudflare-ға** жүктеледі (tus, үлкен файлдар бөліктермен, үзілсе жалғасады). Сервер тек бір реттік сілтеме жасайды (`POST /api/admin/stream/uploads`) — видео Vercel арқылы өтпейді.
+- Жаңа видео әрқашан `requireSignedURLs` және `allowedOrigins`-пен жасалады; Video UID Cloudflare жауабынан алынып, `stream_videos` пен сабаққа автоматты жазылады.
+- Ауыстыру: ескі видео жаңасы **ready** болғаннан кейін ғана Cloudflare-дан өшіріледі.
+- Күй webhook арқылы жаңарады (бет жабылса да): `npm run cf:webhook -- https://<production-домен>` → шыққан `CLOUDFLARE_STREAM_WEBHOOK_SECRET`-ті Vercel-ге қойыңыз. Webhook-сыз да бет ашық тұрғанда күй серверден тексеріледі.
+- Мұғалім тағайындау: **Админ-панель → Оқушылар → пайдаланушы → «Мұғалім рұқсаты»** → курстарды белгілеңіз.
 
 ---
 

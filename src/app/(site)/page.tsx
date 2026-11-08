@@ -2,17 +2,19 @@ import { CourseGrid } from "@/components/courses/CourseGrid";
 import { Hero } from "@/components/landing/Hero";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { Countdown } from "@/components/landing/Countdown";
+import { Graduates } from "@/components/landing/Graduates";
 import { Alert } from "@/components/ui/Alert";
 import { getVisibleCourses } from "@/lib/courses";
 import { getPlatformSettings, joinCta } from "@/lib/settings";
-import { getPublishedTestimonials } from "@/lib/landing";
+import { getPublishedGraduates, getPublishedTestimonials } from "@/lib/landing";
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const [{ error }, courses, settings, testimonials] = await Promise.all([
+  const [{ error }, courses, settings, testimonials, graduates] = await Promise.all([
     searchParams,
     getVisibleCourses().catch(() => []),
     getPlatformSettings(),
     getPublishedTestimonials(),
+    getPublishedGraduates(),
   ]);
   const firstOpen = courses.find((c) => c.status === "published");
   // «Курсқа қосылу»: Баптаулардағы WhatsApp сілтемесі (болмаса — курс беті)
@@ -37,6 +39,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </section>
 
       {testimonials.length > 0 && <Testimonials items={testimonials} />}
+
+      {graduates.length > 0 && <Graduates items={graduates} />}
 
       {settings.exam_date && <Countdown title={settings.exam_countdown_title} date={settings.exam_date} cta={cta} />}
     </>

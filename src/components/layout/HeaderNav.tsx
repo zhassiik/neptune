@@ -16,14 +16,16 @@ const links = [
 ];
 
 /** Ғарыштық (күңгірт) header — Neptune стилі */
-export function HeaderNav({ platformName, user }: { platformName: string; user: { name: string; isAdmin: boolean } | null }) {
+export function HeaderNav({ platformName, user }: { platformName: string; user: { name: string; isAdmin: boolean; isCurator?: boolean } | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [pathname]);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
-  const navLinks = user ? [...links, { href: "/cabinet", label: "Менің нәтижелерім" }] : links;
+  const navLinks = user
+    ? [...links, { href: "/cabinet", label: "Менің нәтижелерім" }, ...(user.isCurator ? [{ href: "/curator", label: "Оқушылар нәтижесі" }] : [])]
+    : links;
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-space-950/85 text-white backdrop-blur-xl">

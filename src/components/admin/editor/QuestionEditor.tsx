@@ -16,7 +16,7 @@ import {
   type QuestionDraft,
   type QuestionErrors,
 } from "@/lib/admin/question-schema";
-import { questionTypeForPosition, SECTIONS } from "@/lib/scoring";
+import { questionTypeForPosition, SECTIONS, type QuestionType } from "@/lib/scoring";
 import { ImageUploader, type ImageValue } from "./ImageUploader";
 import { OptionsEditor, newOption } from "./OptionsEditor";
 import { MatchingEditor } from "./MatchingEditor";
@@ -34,13 +34,16 @@ const TYPE_HINTS = {
   multiple: "5 немесе 6 жауап нұсқасы, оның 1–3-і дұрыс. Оқушы ең көбі 3 жауап таңдай алады. Максимум — 2 балл.",
 };
 
-function buildDraft(variantId: string, position: number, q: EditorQuestion | undefined): QuestionDraft {
-  const type = questionTypeForPosition(position);
+/** practiceType берілсе — еркін тест: түр сұрақтан/таңдаудан, draft-та сақталады (save_question-ға жіберіледі) */
+function buildDraft(variantId: string, position: number, q: EditorQuestion | undefined, practiceType?: QuestionType): QuestionDraft {
+  const type = q?.type ?? practiceType ?? questionTypeForPosition(position);
+  const typeField = practiceType ? { type } : {};
   if (q) {
     const keyById = new Map(q.matchingOptions.map((o) => [o.id, o.id]));
     return {
       variantId,
       position,
+      ...typeField,
       prompt: q.prompt ?? "",
       imagePath: q.imagePath,
       explanation: q.explanation ?? "",
@@ -56,6 +59,7 @@ function buildDraft(variantId: string, position: number, q: EditorQuestion | und
   return {
     variantId,
     position,
+    ...typeField,
     prompt: "",
     imagePath: null,
     explanation: "",
@@ -79,17 +83,23 @@ export function QuestionEditor({
   question,
   occupiedPositions,
   onDirtyChange,
+  practiceType,
+  positions,
 }: {
   variantId: string;
   position: number;
   question: EditorQuestion | undefined;
   occupiedPositions: Set<number>;
   onDirtyChange: (dirty: boolean) => void;
+  /** Еркін тест: жаңа сұрақтың таңдалған түрі (бар сұрақта — өз түрі) */
+  practiceType?: QuestionType;
+  /** Еркін тест: нөмірін ауыстыруға болатын позициялар */
+  positions?: number[];
 }) {
   const router = useRouter();
   const toast = useToast();
-  const type = questionTypeForPosition(position);
-  const initial = useMemo(() => buildDraft(variantId, position, question), [variantId, position, question]);
+  const type = question?.type ?? practiceType ?? questionTypeForPosition(position);
+  const initial = useMemo(() => buildDraft(variantId, position, question, practiceType), [variantId, position, question, practiceType]);
 
   const [draft, setDraft] = useState<QuestionDraft>(initial);
   const [image, setImage] = useState<ImageValue>({ path: question?.imagePath ?? null, url: question?.imageUrl ?? null });
@@ -154,7 +164,7 @@ export function QuestionEditor({
     });
 
   const section = SECTIONS.find((s) => s.type === type)!;
-  const movePositions = Array.from({ length: section.to - section.from + 1 }, (_, i) => section.from + i).filter((p) => p !== position);
+  const movePositions = (positions ?? Array.from({ length: section.to - section.from + 1 }, (_, i) => section.from + i)).filter((p) => p !== position);
 
   const doMove = () =>
     startMoving(async () => {

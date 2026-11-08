@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CircleDashed, EyeOff, MinusCircle, PlayCircle, XCircle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { loadAttemptReview } from "@/lib/attempts/review";
 import { ScoreDonut } from "@/components/results/ScoreDonut";
 import { ReviewList } from "@/components/results/ReviewList";
@@ -27,7 +28,13 @@ export default async function ResultPage({
   const user = await requireUser(`/results/${attemptId}`);
   const isAdmin = user.profile?.role === "admin";
 
-  const review = await loadAttemptReview(attemptId, { id: user.id, isAdmin });
+  const isCurator = user.profile?.role === "curator";
+  const supabase = isCurator ? await createClient() : null;
+  const review = await loadAttemptReview(attemptId, {
+    id: user.id,
+    isAdmin,
+    canCurate: supabase ? async (courseId) => (await supabase.rpc("can_curate_course", { p_course_id: courseId })).data === true : undefined,
+  });
   if (!review) notFound();
 
   const { attempt, variant, questions, showAnswers, student } = review;
@@ -42,20 +49,26 @@ export default async function ResultPage({
     { label: "Жауапсыз", value: attempt.unanswered_count ?? 0, icon: CircleDashed, className: "text-slate-500 bg-slate-100" },
   ];
 
-  const sections = SECTIONS.map((s) => {
-    const qs = questions.filter((q) => q.position >= s.from && q.position <= s.to);
-    return {
-      label: `${s.from}–${s.to} сұрақ`,
-      points: qs.reduce((sum, q) => sum + q.points, 0),
-      max: qs.reduce((sum, q) => sum + q.maxPoints, 0),
-    };
-  });
+  // ҰБТ — нөмір бөлімдері бойынша; еркін тест — сұрақ түрлері бойынша
+  const groups =
+    variant.kind === "practice"
+      ? (
+          [
+            ["single", "Бір жауапты"],
+            ["matching", "Сәйкестендіру"],
+            ["multiple", "Көп жауапты"],
+          ] as const
+        ).map(([type, label]) => ({ label, qs: questions.filter((q) => q.type === type) }))
+      : SECTIONS.map((s) => ({ label: `${s.from}–${s.to} сұрақ`, qs: questions.filter((q) => q.position >= s.from && q.position <= s.to) }));
+  const sections = groups
+    .filter((g) => g.qs.length > 0)
+    .map((g) => ({ label: g.label, points: g.qs.reduce((sum, q) => sum + q.points, 0), max: g.qs.reduce((sum, q) => sum + q.maxPoints, 0) }));
 
   return (
     <div className="bg-slate-50/60">
       <div className="container-page py-8 sm:py-12">
-        <ButtonLink href={isAdmin && !isOwner ? "/admin/results" : courseHref} variant="ghost" size="sm" className="-ml-3">
-          <ArrowLeft className="size-4" /> {isAdmin && !isOwner ? "Нәтижелерге қайту" : "Нұсқаларға қайту"}
+        <ButtonLink href={!isOwner ? (isAdmin ? "/admin/results" : "/curator") : courseHref} variant="ghost" size="sm" className="-ml-3">
+          <ArrowLeft className="size-4" /> {!isOwner ? "Нәтижелерге қайту" : "Нұсқаларға қайту"}
         </ButtonLink>
 
         {/* Жалпы нәтиже */}
@@ -124,11 +137,7 @@ export default async function ResultPage({
             <span className="inline-flex items-center gap-1.5 font-semibold">
               <EyeOff className="size-4" /> Дұрыс жауаптар жасырылған
             </span>
-            <p className="mt-0.5">
-              {review.answersHiddenUntil
-                ? `«Апта үздігі» жүріп жатыр: дұрыс жауаптар мен түсіндірмелер ${formatDateTime(review.answersHiddenUntil)}-ден кейін ашылады. Қазір әр сұрақ бойынша балыңызды көре аласыз.`
-                : "Мұғалім бұл нұсқа үшін дұрыс жауаптарды көрсетуді шектеген. Әр сұрақ бойынша алған балыңызды көре аласыз."}
-            </p>
+            <p className="mt-0.5">Мұғалім бұл нұсқа үшін дұрыс жауаптарды көрсетуді шектеген. Әр сұрақ бойынша алған балыңызды көре аласыз.</p>
           </Alert>
         )}
         <ReviewList questions={questions} showAnswers={showAnswers} initialFilter={filter === "mistakes" ? "mistakes" : "all"} />

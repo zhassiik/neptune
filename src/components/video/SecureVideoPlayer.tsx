@@ -44,13 +44,17 @@ function errorMessage(status: number, body: { error?: string }) {
  */
 export function SecureVideoPlayer({
   variantId,
+  tokenUrl,
   title,
   watermark,
 }: {
-  variantId: string;
+  /** ҰБТ нұсқасының видео-талдауы (немесе tokenUrl — курс сабағы үшін) */
+  variantId?: string;
+  tokenUrl?: string;
   title: string;
   watermark: { name: string; email: string };
 }) {
+  const tokenEndpoint = tokenUrl ?? `/api/video/${variantId}/token`;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<HlsType | null>(null);
@@ -83,7 +87,7 @@ export function SecureVideoPlayer({
   /* -------------------------- Signed URL алу -------------------------- */
 
   const fetchPlayback = useCallback(async (): Promise<Playback> => {
-    const res = await fetch(`/api/video/${variantId}/token`, { method: "POST", cache: "no-store" });
+    const res = await fetch(tokenEndpoint, { method: "POST", cache: "no-store" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(errorMessage(res.status, body)) as Error & { denied?: boolean };
@@ -91,7 +95,7 @@ export function SecureVideoPlayer({
       throw err;
     }
     return body as Playback;
-  }, [variantId]);
+  }, [tokenEndpoint]);
 
   const destroyHls = () => {
     hlsRef.current?.destroy();
@@ -158,7 +162,12 @@ export function SecureVideoPlayer({
             hls.recoverMediaError();
           } else if (data.type === Hls.ErrorTypes.NETWORK_ERROR && code !== 404 && retries.network < 3) {
             retries.network += 1;
-            setTimeout(() => hls.startLoad(), 1000 * retries.network);
+            // Manifest жүктелмесе startLoad() ештеңе істемейді (шексіз «жүктелуде») — manifest-ті қайта сұраймыз
+            const manifestFailed =
+              data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+              data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT ||
+              data.details === Hls.ErrorDetails.MANIFEST_PARSING_ERROR;
+            setTimeout(() => (manifestFailed ? hls.loadSource(playback.hls) : hls.startLoad()), 1000 * retries.network);
           } else {
             fail(
               code === 404

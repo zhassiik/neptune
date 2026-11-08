@@ -28,13 +28,41 @@ export function Countdown({ title, date, cta }: { title: string; date: string; c
 
   return (
     <section className="space-bg relative isolate overflow-hidden py-14 sm:py-20">
-      <div className="stars" aria-hidden />
+      {/* Фон қозғалысы: тұман толқиды, жұлдыздар жылжиды, орбита бойымен кометалар айналады */}
+      <div className="nebula-drift pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[140%] w-[70%] rounded-full bg-[radial-gradient(closest-side,rgb(79_220_251/0.16),rgb(124_92_255/0.08)_55%,transparent)] blur-2xl" aria-hidden />
+      <div className="stars stars-drift" aria-hidden />
       <svg viewBox="0 0 1200 400" className="pointer-events-none absolute inset-0 size-full text-neptune-400/20" fill="none" preserveAspectRatio="none" aria-hidden>
+        <defs>
+          <radialGradient id="comet-glow">
+            <stop offset="0" stopColor="#e0faff" />
+            <stop offset="0.35" stopColor="#4fdcfb" stopOpacity="0.9" />
+            <stop offset="1" stopColor="#4fdcfb" stopOpacity="0" />
+          </radialGradient>
+          <path id="orbit-outer" d="M40 200 A560 150 0 1 1 1160 200 A560 150 0 1 1 40 200" />
+          <path id="orbit-inner" d="M1020 200 A420 95 0 1 1 180 200 A420 95 0 1 1 1020 200" />
+        </defs>
         <ellipse cx="600" cy="200" rx="560" ry="150" stroke="currentColor" strokeWidth="2" />
-        <ellipse cx="600" cy="200" rx="420" ry="95" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 12" />
+        <ellipse className="dash-flow" cx="600" cy="200" rx="420" ry="95" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 12" />
+        <g className="motion-reduce:hidden">
+          <g>
+            <ellipse rx="16" ry="10" fill="url(#comet-glow)" opacity="0.7" />
+            <circle r="3.2" fill="#e0faff" />
+            <animateMotion dur="22s" repeatCount="indefinite">
+              <mpath href="#orbit-outer" />
+            </animateMotion>
+          </g>
+          <g>
+            <ellipse rx="11" ry="7" fill="url(#comet-glow)" opacity="0.6" />
+            <circle r="2.4" fill="#c4b5fd" />
+            <animateMotion dur="15s" repeatCount="indefinite">
+              <mpath href="#orbit-inner" />
+            </animateMotion>
+          </g>
+        </g>
       </svg>
       <div className="container-page relative text-center">
-        <h2 className="text-2xl font-extrabold text-white sm:text-4xl">{title}</h2>
+        {/* Баптауда кіші әріппен жазылса да, тақырып бас әріппен басталады */}
+        <h2 className="text-2xl font-extrabold text-white sm:text-4xl">{title.charAt(0).toLocaleUpperCase("kk") + title.slice(1)}</h2>
         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-4 gap-2 sm:gap-5" role="timer" aria-live="off">
           {boxes.map((b) => (
             <div key={b.l} className="glass-dark rounded-2xl px-1 py-4 sm:rounded-3xl sm:py-7">

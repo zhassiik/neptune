@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { MAX_TOTAL_SCORE, maxScoreForTypes, type QuestionType } from "@/lib/scoring";
 import { createAdminClient, ServerConfigError } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCourseAccess } from "@/lib/access";
-import { formatDateTime } from "@/lib/utils";
 
 export interface StartState {
   error?: string;
@@ -36,18 +36,13 @@ export async function startAttempt(_prev: StartState, formData: FormData): Promi
       id: string;
       status: string;
       time_limit_minutes: number | null;
-      contest_starts_at?: string | null;
+      kind?: "ubt" | "practice";
       courses: { id: string; status: string; access_mode?: string } | null;
     }>();
   if (variantError) console.error("[startAttempt] variant query failed", variantError.message);
   if (!variant || variant.status !== "published" || !variant.courses) return { error: "Бұл нұсқа қолжетімсіз" };
   const access = await getCourseAccess(supabase, user, { ...variant.courses, access_mode: variant.courses.access_mode ?? "open" });
   if (!access.allowed) return { error: access.reason === "not_enrolled" ? "Бұл курсқа рұқсатыңыз жоқ" : "Курс әлі ашылмаған" };
-
-  // «Апта үздігі»: нұсқа куратор ашқан уақыттан бұрын басталмайды (ерте көріп алмау үшін)
-  if (variant.contest_starts_at && Date.now() < new Date(variant.contest_starts_at).getTime() && user.profile?.role !== "admin") {
-    return { error: `Бұл нұсқа ${formatDateTime(variant.contest_starts_at)}-де ашылады (Апта үздігі)` };
-  }
 
   let admin: ReturnType<typeof createAdminClient>;
   try {
@@ -57,12 +52,16 @@ export async function startAttempt(_prev: StartState, formData: FormData): Promi
     return { error: e instanceof ServerConfigError && user.profile?.role === "admin" ? e.message : "Сервер баптауында қате бар. Әкімшіге хабарлаңыз." };
   }
 
-  const { count, error: countError } = await admin.from("questions").select("id", { count: "exact", head: true }).eq("variant_id", variant.id);
+  const { data: qTypes, error: countError } = await admin.from("questions").select("type").eq("variant_id", variant.id);
   if (countError) {
     console.error("[startAttempt] questions count failed", countError);
     return { error: "Тестті бастау мүмкін болмады. Қайталап көріңіз" };
   }
-  if ((count ?? 0) < 40) return { error: "Нұсқа әлі толық дайын емес" };
+  const practice = variant.kind === "practice";
+  const count = qTypes?.length ?? 0;
+  if (practice ? count < 1 : count < 40) return { error: practice ? "Тест әлі дайын емес" : "Нұсқа әлі толық дайын емес" };
+  // ҰБТ — 50 балл; еркін тест — сұрақтар балдарының қосындысы
+  const maxScore = practice ? maxScoreForTypes((qTypes ?? []).map((q) => q.type as QuestionType)) : MAX_TOTAL_SCORE;
 
   const { data: active } = await admin
     .from("test_attempts")
@@ -79,7 +78,7 @@ export async function startAttempt(_prev: StartState, formData: FormData): Promi
     const deadline = variant.time_limit_minutes ? new Date(now.getTime() + variant.time_limit_minutes * 60_000).toISOString() : null;
     const { data: created, error } = await admin
       .from("test_attempts")
-      .insert({ variant_id: variant.id, student_id: user.id, started_at: now.toISOString(), deadline_at: deadline })
+      .insert({ variant_id: variant.id, student_id: user.id, started_at: now.toISOString(), deadline_at: deadline, max_score: maxScore })
       .select("id")
       .single();
     if (error) {

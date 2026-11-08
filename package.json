@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "make-admin": "tsx scripts/make-admin.ts",
-    "cf:signing-key": "tsx scripts/cloudflare-signing-key.ts"
+    "cf:signing-key": "tsx scripts/cloudflare-signing-key.ts",
+    "cf:webhook": "tsx scripts/cloudflare-webhook.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -23,6 +24,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
+    "tus-js-client": "4.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

@@ -351,7 +351,7 @@ function FinishModal({
         </div>
       ) : (
         <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-4 font-medium text-emerald-800">
-          <CheckCircle2 className="size-5" /> Барлық 40 сұраққа жауап берілді
+          <CheckCircle2 className="size-5" /> Барлық сұраққа жауап берілді
         </div>
       )}
       <p className="mt-4 text-sm text-slate-500">Растағаннан кейін жауаптарды өзгертуге болмайды. Нәтиже бірден есептеледі.</p>

@@ -29,7 +29,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ varian
     <TestRunner
         mode="preview"
         attemptId={`preview-${variant.id}`}
-        title={`${variantHeading(variant)} · Preview (${questions.length}/40)`}
+        title={`${variantHeading(variant)} · Preview (${questions.length}${variant.kind === "practice" ? "" : "/40"})`}
         questions={publicQuestions}
         initialAnswers={{}}
         deadline={null}

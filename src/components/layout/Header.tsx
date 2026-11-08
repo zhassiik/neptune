@@ -7,7 +7,7 @@ export async function Header() {
   return (
     <HeaderNav
       platformName={settings.platform_name}
-      user={user ? { name: user.profile?.full_name || user.email || "Профиль", isAdmin: user.profile?.role === "admin" } : null}
+      user={user ? { name: user.profile?.full_name || user.email || "Профиль", isAdmin: user.profile?.role === "admin", isCurator: user.profile?.role === "curator" } : null}
     />
   );
 }

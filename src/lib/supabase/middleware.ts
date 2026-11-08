@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { DEVICE_COOKIE, deviceCookieOptions, isUuid, loginErrorForStatus, sessionIdFromAccessToken } from "@/lib/devices/config";
 import { isMissingObject, registerDevice } from "@/lib/devices/register";
 
-const PROTECTED_PREFIXES = ["/cabinet", "/test", "/results", "/admin", "/preview"];
+const PROTECTED_PREFIXES = ["/cabinet", "/test", "/results", "/admin", "/preview", "/curator"];
 const AUTH_PAGES = ["/login", "/register"];
 
 export async function updateSession(request: NextRequest) {

@@ -5,10 +5,11 @@ import { useState, useTransition } from "react";
 import { ShieldCheck, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "./ConfirmDialog";
+import type { UserRole } from "@/lib/types";
 import { useToast } from "./Toast";
 import { setUserRole } from "@/lib/admin/actions";
 
-export function RoleToggle({ userId, name, role }: { userId: string; name: string; role: "student" | "admin" }) {
+export function RoleToggle({ userId, name, role }: { userId: string; name: string; role: UserRole }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();

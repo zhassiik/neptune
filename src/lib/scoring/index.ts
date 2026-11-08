@@ -28,6 +28,11 @@ export function questionTypeForPosition(position: number): QuestionType {
   return "multiple";
 }
 
+/** Еркін тесттің ең жоғары балы: сұрақ түрлерінің балдарының қосындысы */
+export function maxScoreForTypes(types: readonly QuestionType[]): number {
+  return types.reduce((sum, t) => sum + maxPointsForType(t), 0);
+}
+
 export function maxPointsForType(type: QuestionType): number {
   return type === "single" ? 1 : 2;
 }

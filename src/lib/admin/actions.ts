@@ -40,6 +40,14 @@ const optionalInt = (min: number, max: number, message: string) =>
     .transform((v) => (v ? Number(v) : null))
     .refine((v) => v === null || (Number.isInteger(v) && v >= min && v <= max), message);
 
+/** Classroom (немесе басқа https) сілтемесі; бос — null */
+const classroomLink = z
+  .string()
+  .trim()
+  .max(500, "Сілтеме тым ұзын")
+  .refine((v) => !v || /^https:\/\/\S+$/.test(v), "https:// деп басталатын сілтеме енгізіңіз (мысалы, Classroom тапсырмасы)")
+  .transform((v) => v || null);
+
 const variantSchema = z.object({
   course_id: z.string().uuid("Курсты таңдаңыз"),
   position: z
@@ -73,6 +81,14 @@ const variantSchema = z.object({
       return uid;
     }),
   show_correct_answers: z.boolean(),
+  draft_url: classroomLink,
+  notes_url: classroomLink,
+  /** datetime-local (Алматы) → ISO; бос — null */
+  homework_deadline: z
+    .string()
+    .trim()
+    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v), "Дедлайнды толық таңдаңыз")
+    .transform((v) => (v ? `${v}:00+05:00` : null)),
 });
 
 type VariantInput = z.infer<typeof variantSchema>;
@@ -121,6 +137,9 @@ function readVariantForm(fd: FormData) {
     description: fd.get("description") ?? "",
     time_limit_minutes: fd.get("time_limit_minutes") ?? "",
     show_correct_answers: fd.get("show_correct_answers") === "on",
+    draft_url: fd.get("draft_url") ?? "",
+    notes_url: fd.get("notes_url") ?? "",
+    homework_deadline: fd.get("homework_deadline") ?? "",
   });
 }
 
@@ -170,7 +189,8 @@ export async function setVariantStatus(variantId: string, status: "draft" | "pub
       .select("position, type, prompt, image_path, answer_options(text, is_correct), matching_items(label, text, correct_option_id), matching_options(id, text)")
       .eq("variant_id", variantId);
     if (error) return { error: humanizeError(error) };
-    const problems = checkVariantCompleteness((data ?? []) as StoredQuestion[]);
+    const { data: v } = await supabase.from("test_variants").select("*").eq("id", variantId).maybeSingle<{ kind?: "ubt" | "practice" }>();
+    const problems = checkVariantCompleteness((data ?? []) as StoredQuestion[], v?.kind ?? "ubt");
     if (problems.length) {
       return { error: `Жариялау мүмкін емес: ${problems.length} сұрақ толық емес`, problems };
     }

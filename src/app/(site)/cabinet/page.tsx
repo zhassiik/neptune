@@ -9,9 +9,8 @@ import { ButtonLink } from "@/components/ui/Button";
 import { StartAttemptButton } from "@/components/courses/StartAttemptButton";
 import { formatDateTime, formatDuration, percent } from "@/lib/utils";
 import { hasVideo, variantHeading } from "@/lib/video";
-import { getLeaderboard } from "@/lib/weekly-server";
-import { Leaderboard } from "@/components/weekly/Leaderboard";
-import type { ContestWeek } from "@/lib/types";
+import { getStudentStreak } from "@/lib/streak-server";
+import { StarStreak } from "@/components/cabinet/StarStreak";
 
 export const metadata: Metadata = { title: "Менің нәтижелерім" };
 export const dynamic = "force-dynamic";
@@ -53,21 +52,17 @@ export default async function CabinetPage() {
     .returns<AttemptRow[]>();
   if (error) throw new Error("Нәтижелерді жүктеу мүмкін болмады");
 
+  // «Менің Жұлдызым» — тек оқушыларға
+  const streak =
+    user.profile?.role === "student" && user.profile.created_at ? await getStudentStreak(supabase, { id: user.id, createdAt: user.profile.created_at }) : null;
+
   const attempts = data ?? [];
   const submitted = attempts.filter((a) => a.status === "submitted");
   const active = attempts.filter((a) => a.status === "in_progress");
-  const best = submitted.reduce((m, a) => Math.max(m, a.total_score ?? 0), 0);
-  const avg = submitted.length ? Math.round(submitted.reduce((s, a) => s + (a.total_score ?? 0), 0) / submitted.length) : 0;
-
-  // «Апта үздігі»: соңғы жарияланған апта (кесте жоқ болса — көрсетілмейді)
-  const { data: latestWeek } = await supabase
-    .from("contest_weeks")
-    .select("id, course_id, title, position, is_published, courses(slug)")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<ContestWeek & { courses: { slug: string } | null }>();
-  const leaderboard = latestWeek ? await getLeaderboard(supabase, latestWeek.id, 5) : [];
+  // Статистика — тек ҰБТ нұсқалары (50 балдық); еркін тесттердің балы басқа шкалада
+  const ubtSubmitted = submitted.filter((a) => ((a.test_variants as { kind?: string } | null)?.kind ?? "ubt") === "ubt");
+  const best = ubtSubmitted.reduce((m, a) => Math.max(m, a.total_score ?? 0), 0);
+  const avg = ubtSubmitted.length ? Math.round(ubtSubmitted.reduce((s, a) => s + (a.total_score ?? 0), 0) / ubtSubmitted.length) : 0;
 
   // Әр нұсқаның нешінші талпынысы екенін көрсету үшін (ескіден жаңаға қарай нөмірлейміз)
   const attemptNumber = new Map<string, number>();
@@ -91,40 +86,27 @@ export default async function CabinetPage() {
           Сәлем, <b className="text-slate-700">{user.profile?.full_name || user.email}</b>! Мұнда тапсырған барлық нұсқаларыңыз бен қателеріңіздің талдауы сақталады.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            { label: "Тапсырылған нұсқалар", value: submitted.length, icon: ClipboardList },
-            { label: "Ең жоғары балл", value: submitted.length ? `${best}/50` : "—", icon: Trophy },
-            { label: "Орташа балл", value: submitted.length ? `${avg}/50` : "—", icon: Trophy },
-          ].map((s) => (
-            <div key={s.label} className="card flex items-center gap-4 p-5">
-              <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-500">
-                <s.icon className="size-6" />
-              </span>
-              <div>
-                <div className="font-display text-2xl font-extrabold text-navy-900">{s.value}</div>
-                <div className="text-sm text-slate-500">{s.label}</div>
+        {/* Жұлдыз + көрсеткіштер */}
+        <div className={streak ? "mt-8 grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start" : undefined}>
+          {streak && <StarStreak streak={streak} />}
+          <div className={streak ? "grid gap-4 sm:grid-cols-3 lg:grid-cols-1" : "mt-8 grid gap-4 sm:grid-cols-3"}>
+            {[
+              { label: "Тапсырылған нұсқалар", value: submitted.length, icon: ClipboardList },
+              { label: "Ең жоғары балл", value: ubtSubmitted.length ? `${best}/50` : "—", icon: Trophy },
+              { label: "Орташа балл", value: ubtSubmitted.length ? `${avg}/50` : "—", icon: Trophy },
+            ].map((s) => (
+              <div key={s.label} className="card flex items-center gap-4 p-5">
+                <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-500">
+                  <s.icon className="size-6" />
+                </span>
+                <div>
+                  <div className="font-display text-2xl font-extrabold text-navy-900">{s.value}</div>
+                  <div className="text-sm text-slate-500">{s.label}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {latestWeek && (
-          <div className="mt-8">
-            <Leaderboard
-              weeks={[latestWeek]}
-              activeWeekId={latestWeek.id}
-              rows={leaderboard}
-              footer={
-                latestWeek.courses && (
-                  <a href={`/courses/${latestWeek.courses.slug}#top`} className="text-sm font-semibold text-brand-600 hover:underline">
-                    Барлық апталар және нұсқалар →
-                  </a>
-                )
-              }
-            />
+            ))}
           </div>
-        )}
+        </div>
 
         {active.length > 0 && (
           <section className="mt-10">

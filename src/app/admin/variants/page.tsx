@@ -33,7 +33,9 @@ export default async function AdminVariantsPage({ searchParams }: { searchParams
     if (next.course) p.set("course", next.course);
     return `/admin/variants${p.size ? `?${p}` : ""}`;
   };
-  const { data, error } = await query.returns<Row[]>();
+  const { data: all, error } = await query.returns<(Row & { kind?: string })[]>();
+  // Блоктағы еркін тесттер мұнда емес, курс құрылымында басқарылады
+  const data = all?.filter((v) => (v.kind ?? "ubt") === "ubt") ?? null;
   if (error) throw new Error("Нұсқаларды жүктеу мүмкін болмады");
 
   const tabs = [

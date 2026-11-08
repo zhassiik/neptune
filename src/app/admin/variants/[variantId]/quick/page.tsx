@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Eye, Settings2 } from "lucide-react";
 import { loadVariantForEditor } from "@/lib/admin/editor-data";
 import { QuickEntry } from "@/components/admin/editor/QuickEntry";
@@ -19,6 +20,8 @@ export default async function QuickEntryPage({
 }) {
   const [{ variantId }, { created }] = await Promise.all([params, searchParams]);
   const { variant, questions } = await loadVariantForEditor(variantId);
+  // Жылдам енгізу — тек 40 сұрақтық ҰБТ нұсқасына; еркін тест өз редакторында
+  if (variant.kind === "practice") redirect(`/admin/variants/${variant.id}`);
 
   return (
     <>

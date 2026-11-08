@@ -22,19 +22,23 @@ export function Hero({ settings, cta }: { settings: PlatformSettings; cta: { hre
           <span className="glass-dark inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-neptune-200">
             <span className="size-2 rounded-full bg-neptune-400 shadow-[0_0_10px_var(--color-neptune-400)]" /> ҰБТ математика · Neptune UBT
           </span>
-          <h1 className="mt-5 text-4xl leading-[1.08] font-extrabold text-white sm:text-5xl lg:text-[3.6rem]">
-            ҰБТ математикасын <span className="text-neptune-gradient">сеніммен</span> тапсыр
+          <h1 className="mt-5 text-[2.1rem] leading-[1.1] font-extrabold text-white sm:text-5xl lg:text-[3.2rem]">
+            Күн сайын <span className="text-neptune-gradient whitespace-nowrap">таңғы 5-те</span> нұсқа талдайтын мұғалім
           </h1>
+          <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/80 sm:text-xl">
+            Мақсатым — таң берекесімен оқушыларымды <b className="font-extrabold text-neptune-200">50/50</b> баллға жеткізу
+          </p>
 
           <div className="glass-dark mt-7 rounded-3xl p-5 sm:p-6">
             <div className="flex items-center gap-2">
               <GraduationCap className="size-6 text-neptune-300" />
               <span className="font-display text-xl font-extrabold text-white sm:text-2xl">{settings.teacher_name}</span>
             </div>
-            <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+            {/* Бір баған: әр пункт бір жолда, бірдей аралықпен (екі бағанда ұзын жолдар қисық көрінетін) */}
+            <ul className="mt-4 space-y-2.5">
               {bio.map((line) => (
-                <li key={line} className="flex items-start gap-2 text-[15px] text-white/80">
-                  <CheckCircle2 className="mt-0.5 size-4.5 shrink-0 text-neptune-400" /> {line}
+                <li key={line} className="flex items-start gap-2.5 text-[15px] leading-snug text-white/85">
+                  <CheckCircle2 className="mt-px size-4.5 shrink-0 text-neptune-400" /> {line}
                 </li>
               ))}
             </ul>
@@ -92,7 +96,7 @@ export function Hero({ settings, cta }: { settings: PlatformSettings; cta: { hre
               />
             </div>
 
-            <div className="glass-dark absolute top-[6%] left-0 flex items-center gap-2.5 rounded-2xl bg-space-950/60 px-4 py-3 sm:left-[-4%]">
+            <div className="glass-dark absolute top-[9%] left-0 z-10 flex items-center gap-2.5 rounded-2xl bg-space-950/80 px-4 py-3 shadow-lg sm:left-[-3%]">
               <span className="grid size-9 place-items-center rounded-xl bg-neptune-400/15 text-neptune-300">
                 <Award className="size-5" />
               </span>
@@ -110,7 +114,7 @@ export function Hero({ settings, cta }: { settings: PlatformSettings; cta: { hre
             )}
 
             {rest[0] && (
-              <div className="glass-dark absolute bottom-[26%] left-[-2%] hidden items-center gap-2 rounded-2xl bg-space-950/60 px-4 py-3 sm:flex">
+              <div className="glass-dark absolute bottom-[26%] left-0 z-10 hidden items-center gap-2 rounded-2xl bg-space-950/80 px-4 py-3 shadow-lg sm:left-[-3%] sm:flex">
                 <BadgeCheck className="size-5 text-neptune-400" />
                 <span className="text-sm font-bold text-white">
                   {rest[0].value} <span className="font-medium text-white/60">{rest[0].label}</span>

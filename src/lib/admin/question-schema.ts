@@ -29,6 +29,8 @@ export interface MatchingItemDraft {
 export interface QuestionDraft {
   variantId: string;
   position: number;
+  /** Еркін тестте (practice) — мұғалім таңдайды; ҰБТ-да болмайды (нөмірден анықталады) */
+  type?: QuestionType;
   prompt: string;
   imagePath: string | null;
   explanation: string;
@@ -47,7 +49,8 @@ const optionSchema = z.object({
 
 const baseSchema = z.object({
   variantId: z.string().uuid(),
-  position: z.number().int().min(1).max(40),
+  position: z.number().int().min(1).max(200),
+  type: z.enum(["single", "matching", "multiple"]).optional(),
   prompt: z.string().trim().max(4000, "Сұрақ мәтіні тым ұзын (макс. 4000)"),
   imagePath: z
     .string()
@@ -97,7 +100,7 @@ export function validateQuestion(draft: QuestionDraft): { ok: true; data: Questi
   }
 
   const data = parsed.data as QuestionDraft;
-  const type = questionTypeForPosition(data.position);
+  const type = draftType(data);
 
   if (!data.imagePath && !data.prompt) {
     errors.content = "Сұраққа сурет жүктеңіз немесе сұрақ мәтінін жазыңыз";
@@ -136,8 +139,14 @@ export function validateQuestion(draft: QuestionDraft): { ok: true; data: Questi
 }
 
 /** save_question RPC-ке берілетін payload */
+/** Сұрақтың түрі: еркін тестте — таңдалғаны, ҰБТ-да — нөміріне қарай */
+export function draftType(d: Pick<QuestionDraft, "position" | "type">): QuestionType {
+  return d.type ?? questionTypeForPosition(d.position);
+}
+
 export function toRpcPayload(d: QuestionDraft) {
   return {
+    type: d.type ?? null,
     prompt: d.prompt,
     image_path: d.imagePath,
     explanation: d.explanation,
@@ -180,9 +189,18 @@ export function questionIssue(q: StoredQuestion): string | null {
   return null;
 }
 
-export function checkVariantCompleteness(questions: StoredQuestion[]) {
+export function checkVariantCompleteness(questions: StoredQuestion[], kind: "ubt" | "practice" = "ubt") {
   const byPos = new Map(questions.map((q) => [q.position, q]));
   const problems: { position: number; issue: string }[] = [];
+  if (kind === "practice") {
+    // Еркін тест: кемінде бір сұрақ, әрқайсысы толық
+    if (!questions.length) problems.push({ position: 1, issue: "сұрақ қосылмаған" });
+    for (const q of [...questions].sort((a, b) => a.position - b.position)) {
+      const issue = questionIssue(q);
+      if (issue) problems.push({ position: q.position, issue });
+    }
+    return problems;
+  }
   for (let p = 1; p <= 40; p++) {
     const q = byPos.get(p);
     if (!q) problems.push({ position: p, issue: "сұрақ қосылмаған" });

@@ -10,7 +10,23 @@ import { useToast } from "./Toast";
 import { deleteVariant, setVariantStatus } from "@/lib/admin/actions";
 import type { VariantStatus } from "@/lib/types";
 
-export function VariantRowActions({ id, title, status, compact }: { id: string; title: string; status: VariantStatus; compact?: boolean }) {
+export function VariantRowActions({
+  id,
+  title,
+  status,
+  compact,
+  afterDeleteHref = "/admin/variants",
+  practice = false,
+}: {
+  id: string;
+  title: string;
+  status: VariantStatus;
+  compact?: boolean;
+  /** Өшіргеннен кейін қайда өту (еркін тест — курс құрылымына) */
+  afterDeleteHref?: string;
+  /** Блоктағы еркін тест: «40 сұрақ», «жылдам енгізу» жоқ */
+  practice?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -37,7 +53,7 @@ export function VariantRowActions({ id, title, status, compact }: { id: string; 
       else {
         toast(res.message ?? "Өшірілді");
         setConfirmDelete(false);
-        router.push("/admin/variants");
+        router.push(afterDeleteHref);
         router.refresh();
       }
     });
@@ -79,11 +95,11 @@ export function VariantRowActions({ id, title, status, compact }: { id: string; 
         onConfirm={remove}
         loading={pendingDelete}
         danger
-        title="Нұсқаны өшіру керек пе?"
+        title={practice ? "Тестті өшіру керек пе?" : "Нұсқаны өшіру керек пе?"}
         confirmLabel="Иә, өшіру"
       >
         <p>
-          <b className="text-navy-900">«{title}»</b> нұсқасы, оның барлық сұрақтары, суреттері және оқушылардың осы нұсқа бойынша
+          <b className="text-navy-900">«{title}»</b> {practice ? "тесті (сабағымен бірге)" : "нұсқасы"}, оның барлық сұрақтары, суреттері және оқушылардың осы нұсқа бойынша
           нәтижелері біржола өшіріледі. Бұл әрекетті қайтару мүмкін емес.
         </p>
       </ConfirmDialog>
@@ -91,11 +107,14 @@ export function VariantRowActions({ id, title, status, compact }: { id: string; 
       <ConfirmDialog
         open={!!problems}
         onClose={() => setProblems(null)}
-        onConfirm={() => router.push(`/admin/variants/${id}/quick`)}
+        onConfirm={() => {
+          setProblems(null);
+          router.push(practice ? `/admin/variants/${id}?q=${problems?.[0]?.position ?? 1}` : `/admin/variants/${id}/quick`);
+        }}
         title="Нұсқа толық емес"
         confirmLabel="Редакторға өту"
       >
-        <p className="mb-3">Жариялау үшін барлық 40 сұрақ толық болуы керек. Мәселелер:</p>
+        <p className="mb-3">Жариялау үшін {practice ? "барлық сұрақ" : "барлық 40 сұрақ"} толық болуы керек. Мәселелер:</p>
         <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
           {problems?.map((p) => (
             <li key={p.position}>

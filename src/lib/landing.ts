@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
-import type { Testimonial } from "@/lib/types";
+import type { Graduate, Testimonial } from "@/lib/types";
 
 export const SITE_MEDIA_BUCKET = "site-media";
 
@@ -27,4 +27,30 @@ export async function getPublishedTestimonials(): Promise<PublicTestimonial[]> {
     .limit(30);
   if (error || !data) return [];
   return data.map(({ photo_path, ...t }) => ({ ...t, photoUrl: siteMediaUrl(photo_path) }));
+}
+
+export interface PublicGraduate {
+  id: string;
+  student_name: string;
+  score: number | null;
+  score_label: string | null;
+  text: string;
+  photoUrl: string | null;
+  certificateUrl: string | null;
+}
+
+/** «Neptune курсының түлектерінің нәтижелері»: жарияланған түлектер (кесте әлі жоқ болса — бос тізім) */
+export async function getPublishedGraduates(): Promise<PublicGraduate[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("graduates")
+    .select("id, student_name, score, score_label, text, photo_path, certificate_path")
+    .eq("is_published", true)
+    .order("position")
+    .order("created_at", { ascending: false })
+    .limit(50)
+    .returns<Pick<Graduate, "id" | "student_name" | "score" | "score_label" | "text" | "photo_path" | "certificate_path">[]>();
+  if (error || !data) return [];
+  return data.map(({ photo_path, certificate_path, ...g }) => ({ ...g, photoUrl: siteMediaUrl(photo_path), certificateUrl: siteMediaUrl(certificate_path) }));
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, FilePlus2, Files, Home, LayoutDashboard, LogOut, MessageSquareQuote, Settings, Trophy, Users } from "lucide-react";
+import { BarChart3, BookOpen, FilePlus2, Files, GraduationCap, Home, LayoutDashboard, LogOut, MessageSquareQuote, Settings, UserCheck, Users } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { signOut } from "@/lib/actions/auth";
@@ -16,8 +16,9 @@ const NAV = [
   { href: "/admin/variants", label: "Нұсқалар", icon: Files, exact: false, exclude: "/admin/variants/new" },
   { href: "/admin/variants/new", label: "Жаңа нұсқа қосу", icon: FilePlus2, exact: true },
   { href: "/admin/students", label: "Оқушылар", icon: Users, exact: false },
+  { href: "/admin/curators", label: "Кураторлар", icon: UserCheck, exact: false },
   { href: "/admin/results", label: "Нәтижелер", icon: BarChart3, exact: false },
-  { href: "/admin/weekly", label: "Апта үздігі", icon: Trophy, exact: false },
+  { href: "/admin/graduates", label: "Түлектер", icon: GraduationCap, exact: false },
   { href: "/admin/testimonials", label: "Пікірлер", icon: MessageSquareQuote, exact: false },
   { href: "/admin/settings", label: "Баптаулар", icon: Settings, exact: false },
 ];

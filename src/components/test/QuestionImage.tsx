@@ -39,14 +39,14 @@ export function QuestionImage({ src, alt, priority = false }: { src: string; alt
           alt={alt}
           width={0}
           height={0}
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 70vw, 860px"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 75vw, 1000px"
           quality={85}
           priority={priority}
           loading={priority ? undefined : "lazy"}
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
           className={cn(
-            "mx-auto h-auto max-h-[min(62vh,620px)] w-auto max-w-full rounded-xl object-contain transition-opacity",
+            "mx-auto h-auto max-h-[78vh] w-full rounded-xl object-contain transition-opacity",
             loaded ? "opacity-100" : "min-h-40 opacity-0",
           )}
         />

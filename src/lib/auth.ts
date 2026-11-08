@@ -67,11 +67,29 @@ export async function requireAdmin() {
   return user;
 }
 
+/** Куратор беттері (/curator): куратор немесе әкімші. Нақты курсқа құқықты дерекқор тексереді (can_curate_course) */
+export async function requireCuratorPage(next = "/curator") {
+  const user = await requireUser(next);
+  const role = user.profile?.role;
+  if (role !== "admin" && role !== "curator") redirect("/?error=forbidden");
+  return user;
+}
+
 /** Server action ішінде: redirect орнына қате қайтару үшін */
 export async function assertAdmin() {
   const user = await getCurrentUser();
   if (!user || user.profile?.role !== "admin") {
     throw new Error("Бұл әрекетке тек әкімшінің рұқсаты бар");
+  }
+  return user;
+}
+
+/** Server action ішінде: куратор немесе әкімші. Нақты курсқа құқықты дерекқор тексереді */
+export async function assertCurator() {
+  const user = await getCurrentUser();
+  const role = user?.profile?.role;
+  if (!user || (role !== "admin" && role !== "curator")) {
+    throw new Error("Бұл әрекетке тек куратордың рұқсаты бар");
   }
   return user;
 }

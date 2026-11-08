@@ -3,7 +3,7 @@
 import { cn, OPTION_LETTERS } from "@/lib/utils";
 import type { PublicOption } from "@/lib/types";
 
-/** Мәтінсіз нұсқалар (тек скрин) болса — әріптер торы ретінде көрсетіледі */
+/** Мәтінсіз нұсқалар (тек скрин) болса — әріптер бірінің астында бірі (тігінен) көрсетіледі */
 export function isLettersOnly(options: PublicOption[]) {
   return options.length > 0 && options.every((o) => !o.text.trim());
 }
@@ -23,9 +23,9 @@ export function SingleChoice({
 }) {
   const lettersOnly = isLettersOnly(options);
   return (
-    <fieldset className={cn(lettersOnly ? "grid grid-cols-4 gap-2.5 sm:grid-cols-6" : "space-y-2.5")} disabled={disabled}>
+    <fieldset className={cn(lettersOnly ? "flex flex-col gap-3" : "space-y-2.5")} disabled={disabled}>
       <legend className="sr-only">Бір жауапты таңдаңыз</legend>
-      {lettersOnly && <p className="col-span-full -mt-1 mb-1 text-sm text-slate-500">Суреттегі дұрыс жауаптың әрпін таңдаңыз:</p>}
+      {lettersOnly && <p className="-mt-1 mb-1 text-sm text-slate-500">Суреттегі дұрыс жауаптың әрпін таңдаңыз:</p>}
       {options.map((o, i) => {
         const checked = value === o.id;
         return (
@@ -33,7 +33,7 @@ export function SingleChoice({
             key={o.id}
             className={cn(
               "rounded-2xl border-2 transition select-none hover:border-brand-300 hover:bg-brand-50/40 active:scale-[0.97]",
-              lettersOnly ? "grid h-16 place-items-center" : "flex items-start gap-3 px-4 py-3.5",
+              lettersOnly ? "flex min-h-16 items-center gap-4 px-4 py-3 sm:min-h-[72px] sm:px-5" : "flex items-start gap-3 px-4 py-3.5",
               checked ? "border-brand-500 bg-brand-50" : "border-slate-100 bg-white",
               disabled && "pointer-events-none opacity-70",
             )}
@@ -42,13 +42,17 @@ export function SingleChoice({
             <span
               className={cn(
                 "grid shrink-0 place-items-center rounded-full font-bold transition peer-focus-visible:ring-4 peer-focus-visible:ring-brand-200",
-                lettersOnly ? "size-10 text-lg" : "size-7 text-sm",
+                lettersOnly ? "size-11 text-xl" : "size-7 text-sm",
                 checked ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-600",
               )}
             >
               {OPTION_LETTERS[i]}
             </span>
-            {!lettersOnly && <span className="pt-0.5 text-[15px] leading-relaxed text-slate-800 sm:text-base">{o.text}</span>}
+            {lettersOnly ? (
+              <span className="text-base font-semibold text-slate-700">{OPTION_LETTERS[i]} жауабы</span>
+            ) : (
+              <span className="pt-0.5 text-[15px] leading-relaxed text-slate-800 sm:text-base">{o.text}</span>
+            )}
           </label>
         );
       })}

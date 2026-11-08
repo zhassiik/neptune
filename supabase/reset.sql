@@ -25,6 +25,13 @@ drop policy if exists "site-media: admin өзгертеді" on storage.objects;
 drop policy if exists "site-media: admin өшіреді" on storage.objects;
 
 drop table if exists
+  public.module_lessons,
+  public.course_modules,
+  public.graduates,
+  public.stream_videos,
+  public.course_teachers,
+  public.course_curators,
+  public.curator_invites,
   public.attempt_scores,
   public.student_answers,
   public.test_attempts,
@@ -45,6 +52,15 @@ drop table if exists
   public.profiles
 cascade;
 
+drop function if exists public.stream_video_mark_ready cascade;
+drop function if exists public.questions_validate_layout cascade;
+drop function if exists public.can_manage_course_videos cascade;
+drop function if exists public.is_teacher cascade;
+drop function if exists public.is_curator cascade;
+drop function if exists public.can_curate_course cascade;
+drop function if exists public.set_homework_check cascade;
+drop function if exists public.apply_curator_invite_role cascade;
+drop function if exists public.apply_curator_invite_courses cascade;
 drop function if exists public.week_leaderboard cascade;
 drop function if exists public.homework_points cascade;
 drop function if exists public.has_course_access cascade;

@@ -63,7 +63,8 @@ export default async function StudentDevicesPage({ params }: { params: Promise<{
         </Alert>
       )}
       {profile.role === "admin" && <Badge tone="navy" className="mb-4">Әкімші</Badge>}
-      <div className="max-w-3xl">
+      {profile.role === "curator" && <Badge tone="blue" className="mb-4">Куратор</Badge>}
+      <div className="max-w-3xl space-y-6">
         <DeviceList devices={rows} onRevoke={revokeOne} showRevoked />
       </div>
     </>

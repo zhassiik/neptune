@@ -8,7 +8,7 @@ export const answerPayloadSchema = z.object({
 });
 
 export const saveAnswersSchema = z.object({
-  answers: z.array(answerPayloadSchema).max(40),
+  answers: z.array(answerPayloadSchema).max(200),
 });
 
 export type AnswerPayload = z.infer<typeof answerPayloadSchema>;

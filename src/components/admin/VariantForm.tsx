@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Alert } from "@/components/ui/Alert";
 import type { FormState } from "@/lib/admin/actions";
 import type { TestVariant } from "@/lib/types";
+import { toAlmatyInput } from "@/lib/utils";
 
 export interface CourseOption {
   id: string;
@@ -168,6 +169,23 @@ export function VariantForm({
               placeholder="101"
               invalid={!!fe.video_duration_minutes}
             />
+          </Field>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 p-4">
+        <h3 className="font-semibold text-navy-900">Черновик және конспект</h3>
+        <p className="mt-0.5 mb-4 text-sm text-slate-500">Оқушы батырманы басқанда осы Classroom тапсырмасына өтеді. Бос қалдырсаңыз — бөлім көрінбейді.</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="homework_deadline" label="Дедлайн (Алматы уақыты)" error={fe.homework_deadline} hint="Міндетті емес. Оқушыға курс бетінде көрінеді">
+            <Input id="homework_deadline" name="homework_deadline" type="datetime-local" defaultValue={toAlmatyInput(initial?.homework_deadline)} invalid={!!fe.homework_deadline} />
+          </Field>
+          <div className="hidden sm:block" />
+          <Field id="draft_url" label="Черновик — Classroom сілтемесі" error={fe.draft_url}>
+            <Input id="draft_url" name="draft_url" type="url" defaultValue={initial?.draft_url ?? initial?.classroom_url ?? ""} placeholder="https://classroom.google.com/..." invalid={!!fe.draft_url} />
+          </Field>
+          <Field id="notes_url" label="Конспект — Classroom сілтемесі" error={fe.notes_url}>
+            <Input id="notes_url" name="notes_url" type="url" defaultValue={initial?.notes_url ?? initial?.classroom_url ?? ""} placeholder="https://classroom.google.com/..." invalid={!!fe.notes_url} />
           </Field>
         </div>
       </div>

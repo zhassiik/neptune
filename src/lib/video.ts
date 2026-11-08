@@ -60,7 +60,9 @@ export function formatMinutes(minutes: number | null | undefined) {
 }
 
 /** «НҰСҚА 1. Контекст Қарағай ағашы» */
-export function variantHeading(v: { position: number; title: string }) {
+export function variantHeading(v: { position: number; title: string; kind?: string | null }) {
+  // Блоктағы еркін тесттің нөмірі жоқ — атауының өзі
+  if (v.kind === "practice") return v.title;
   return `НҰСҚА ${v.position}. ${v.title}`;
 }
 

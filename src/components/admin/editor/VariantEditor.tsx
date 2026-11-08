@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
-import { ChevronDown, Settings2, Zap } from "lucide-react";
+import { ChevronDown, ListChecks, Settings2, Zap } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { SECTIONS } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
@@ -77,6 +77,9 @@ export function VariantEditor({
           <ButtonLink href={`/admin/variants/${variant.id}/quick`} size="sm" variant="secondary">
             <Zap className="size-4" /> Жылдам енгізу
           </ButtonLink>
+          <ButtonLink href={`/admin/variants/${variant.id}/homework`} size="sm" variant="outline">
+            <ListChecks className="size-4" /> Черновик / Конспект
+          </ButtonLink>
           <VariantRowActions id={variant.id} title={variantHeading(variant)} status={variant.status} compact />
         </div>
       </div>
@@ -107,7 +110,8 @@ export function VariantEditor({
         </button>
         {settingsOpen && (
           <div className="border-t border-slate-100 px-5 py-6 sm:px-7">
-            <VariantForm action={updateAction} initial={variant} submitLabel="Баптауларды сақтау" courses={courses} />
+            {/* key: видео сайттан жүктеліп UID ауысса, форма жаңа мәнмен қайта құрылады (ескі UID қайта сақталмауы үшін) */}
+            <VariantForm key={variant.cloudflare_video_uid ?? "no-video"} action={updateAction} initial={variant} submitLabel="Баптауларды сақтау" courses={courses} />
           </div>
         )}
       </div>

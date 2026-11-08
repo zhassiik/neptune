@@ -42,7 +42,7 @@ export function MultipleChoice({
           </span>
         </span>
       </p>
-      <fieldset className={cn(lettersOnly ? "grid grid-cols-3 gap-2.5 sm:grid-cols-6" : "space-y-2.5")} disabled={disabled}>
+      <fieldset className={cn(lettersOnly ? "flex flex-col gap-3" : "space-y-2.5")} disabled={disabled}>
         <legend className="sr-only">Бірнеше жауапты таңдаңыз</legend>
         {options.map((o, i) => {
           const checked = value.includes(o.id);
@@ -52,7 +52,7 @@ export function MultipleChoice({
               key={o.id}
               className={cn(
                 "rounded-2xl border-2 transition select-none",
-                lettersOnly ? "grid h-16 place-items-center" : "flex items-start gap-3 px-4 py-3.5",
+                lettersOnly ? "flex min-h-16 items-center gap-4 px-4 py-3 sm:min-h-[72px] sm:px-5" : "flex items-start gap-3 px-4 py-3.5",
                 checked ? "border-brand-500 bg-brand-50" : "border-slate-100 bg-white",
                 blocked ? "cursor-not-allowed opacity-50" : "hover:border-brand-300 hover:bg-brand-50/40 active:scale-[0.97]",
                 disabled && "pointer-events-none opacity-70",
@@ -63,13 +63,17 @@ export function MultipleChoice({
               <span
                 className={cn(
                   "grid shrink-0 place-items-center rounded-lg border-2 font-bold transition peer-focus-visible:ring-4 peer-focus-visible:ring-brand-200",
-                  lettersOnly ? "size-10 text-lg" : "size-7 text-sm",
+                  lettersOnly ? "size-11 text-xl" : "size-7 text-sm",
                   checked ? "border-brand-500 bg-brand-500 text-white" : "border-slate-200 bg-white text-slate-500",
                 )}
               >
                 {checked && !lettersOnly ? <Check className="size-4" strokeWidth={3} /> : OPTION_LETTERS[i]}
               </span>
-              {!lettersOnly && <span className="pt-0.5 text-[15px] leading-relaxed text-slate-800 sm:text-base">{o.text}</span>}
+              {lettersOnly ? (
+                <span className="text-base font-semibold text-slate-700">{OPTION_LETTERS[i]} жауабы</span>
+              ) : (
+                <span className="pt-0.5 text-[15px] leading-relaxed text-slate-800 sm:text-base">{o.text}</span>
+              )}
             </label>
           );
         })}

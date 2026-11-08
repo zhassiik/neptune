@@ -9,6 +9,8 @@ import { EnrollmentManager, type EnrollmentRow } from "@/components/admin/Enroll
 import { ButtonLink } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { updateCourse } from "@/lib/admin/actions";
+import { requireAdmin } from "@/lib/auth";
+import { CourseStructure } from "@/components/admin/structure/CourseStructure";
 import type { Course } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Курсты өзгерту" };
@@ -16,7 +18,7 @@ export const metadata: Metadata = { title: "Курсты өзгерту" };
 export default async function EditCoursePage({ params, searchParams }: { params: Promise<{ courseId: string }>; searchParams: Promise<{ created?: string }> }) {
   const [{ courseId }, { created }] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/i.test(courseId)) notFound();
-  const supabase = await createClient();
+  const [supabase, admin] = await Promise.all([createClient(), requireAdmin()]);
   const { data: course } = await supabase.from("courses").select("*").eq("id", courseId).maybeSingle<Course>();
   if (!course) notFound();
 
@@ -53,6 +55,7 @@ export default async function EditCoursePage({ params, searchParams }: { params:
       <div className="card max-w-2xl p-6 sm:p-8">
         <CourseForm action={updateCourse.bind(null, course.id)} initial={course} initialCoverUrl={coverUrl(course.cover_path)} submitLabel="Сақтау" />
       </div>
+      <CourseStructure courseId={course.id} watermark={{ name: admin.profile?.full_name || "Әкімші", email: admin.email ?? "" }} />
       <EnrollmentManager courseId={course.id} accessMode={course.access_mode} rows={rows} />
     </>
   );

@@ -11,6 +11,7 @@ import { variantHeading } from "@/lib/video";
 interface RecentRow {
   id: string;
   total_score: number | null;
+  max_score?: number;
   submitted_at: string | null;
   profiles: { full_name: string; email: string | null } | null;
   test_variants: { title: string; position: number } | null;
@@ -26,7 +27,7 @@ export default async function AdminDashboard() {
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).eq("status", "submitted"),
     supabase
       .from("test_attempts")
-      .select("id, total_score, submitted_at, profiles(full_name, email), test_variants(title, position)")
+      .select("id, total_score, max_score, submitted_at, profiles(full_name, email), test_variants(title, position)")
       .eq("status", "submitted")
       .order("submitted_at", { ascending: false })
       .limit(8)
@@ -92,7 +93,9 @@ export default async function AdminDashboard() {
                   <div className="truncate text-sm text-slate-500">{r.test_variants ? variantHeading(r.test_variants) : "—"}</div>
                 </div>
                 <div className="hidden text-sm text-slate-500 sm:block">{formatDateTime(r.submitted_at)}</div>
-                <Badge tone="navy">{r.total_score}/50</Badge>
+                <Badge tone="navy">
+                  {r.total_score}/{r.max_score ?? 50}
+                </Badge>
               </Link>
             ))}
           </div>

@@ -121,6 +121,37 @@
     background-size: 320px 280px;
     animation: var(--animate-twinkle);
   }
+  /* Ғаламшардың айналуы: бет текстурасы көлденең қайталанады және жылжиды */
+  .planet-surface {
+    background-size: 200% 100%;
+    background-repeat: repeat-x;
+    animation: planet-spin 28s linear infinite;
+  }
+  @keyframes planet-spin {
+    to { background-position: -200% 0; }
+  }
+  /* Жұлдыздардың баяу жылжуы (жыпылықтаумен бірге) */
+  .stars-drift {
+    animation: var(--animate-twinkle), stars-drift 120s linear infinite;
+  }
+  /* Үзік сызықты орбитаның «ағуы» */
+  .dash-flow {
+    animation: dash-flow 8s linear infinite;
+  }
+  /* Артқы тұманның толқуы */
+  .nebula-drift {
+    animation: nebula-drift 14s ease-in-out infinite;
+  }
+  @keyframes stars-drift {
+    to { background-position: -320px 280px; }
+  }
+  @keyframes dash-flow {
+    to { stroke-dashoffset: -150; }
+  }
+  @keyframes nebula-drift {
+    0%, 100% { opacity: 0.55; transform: translate(-58%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-42%, -54%) scale(1.12); }
+  }
   .glass-dark {
     @apply border border-white/10 bg-white/[0.06] backdrop-blur-md;
   }

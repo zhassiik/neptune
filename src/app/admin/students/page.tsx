@@ -28,7 +28,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("profiles")
     .select("id, full_name, email, role, created_at, blocked_at", { count: "exact" })
-    .eq("role", role)
+    // «Оқушылар» қойындысында мұғалімдер де көрінеді (белгісімен)
+    .filter("role", role === "admin" ? "eq" : "neq", "admin")
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (q) {
@@ -108,6 +109,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                       <Link href={`/admin/students/${p.id}`} className="font-semibold text-navy-900 hover:text-brand-600">
                         {p.full_name || "—"}
                       </Link>
+                      {p.role === "curator" && <Badge tone="blue" className="ml-2">Куратор</Badge>}
                       {(p as Profile & { blocked_at?: string | null }).blocked_at && <Badge tone="red" className="ml-2">Бұғатталған</Badge>}
                       <div className="text-slate-500">{p.email}</div>
                     </td>

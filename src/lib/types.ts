@@ -1,6 +1,6 @@
 import type { AnswerResult, QuestionType } from "@/lib/scoring";
 
-export type UserRole = "student" | "admin";
+export type UserRole = "student" | "curator" | "admin";
 export type VariantStatus = "draft" | "published";
 export type AttemptStatus = "in_progress" | "submitted";
 
@@ -47,6 +47,19 @@ export interface Testimonial {
   is_published: boolean;
 }
 
+/** «Neptune курсының түлектерінің нәтижелері» блогындағы түлек */
+export interface Graduate {
+  id: string;
+  student_name: string;
+  score: number | null;
+  score_label: string | null;
+  text: string;
+  photo_path: string | null;
+  certificate_path: string | null;
+  position: number;
+  is_published: boolean;
+}
+
 export type CourseStatus = "draft" | "coming_soon" | "published";
 
 export interface Course {
@@ -64,9 +77,13 @@ export interface Course {
   updated_at: string;
 }
 
+export type VariantKind = "ubt" | "practice";
+
 export interface TestVariant {
   id: string;
   course_id: string;
+  /** ubt — 40 сұрақтық ҰБТ нұсқасы; practice — блоктағы еркін тест (migration 20261111 болмаса — undefined = ubt) */
+  kind?: VariantKind;
   position: number;
   video_url: string | null;
   video_duration_minutes: number | null;
@@ -83,21 +100,12 @@ export interface TestVariant {
   published_at: string | null;
   created_at: string;
   updated_at: string;
-  /** «Апта үздігі» (migration 20261031 болмаса — undefined) */
-  week_id?: string | null;
-  contest_starts_at?: string | null;
-  contest_ends_at?: string | null;
-  /** Черновик және конспект: Google Classroom сілтемесі және дедлайн */
+  /** Черновик және конспект: ортақ Google Classroom сілтемесі және дедлайн */
   classroom_url?: string | null;
   homework_deadline?: string | null;
-}
-
-export interface ContestWeek {
-  id: string;
-  course_id: string;
-  title: string;
-  position: number;
-  is_published: boolean;
+  /** Черновик / конспект тапсырмаларының Classroom сілтемелері (бос болса — classroom_url) */
+  draft_url?: string | null;
+  notes_url?: string | null;
 }
 
 export type HomeworkStatus = "on_time" | "late" | "missing";
@@ -107,17 +115,6 @@ export interface HomeworkCheck {
   student_id: string;
   draft_status: HomeworkStatus | null;
   notes_status: HomeworkStatus | null;
-}
-
-export interface LeaderboardRow {
-  rank: number;
-  student_id: string | null;
-  full_name: string;
-  test_points: number;
-  homework_points: number;
-  total: number;
-  contest_tests: number;
-  is_me: boolean;
 }
 
 export interface TestAttempt {

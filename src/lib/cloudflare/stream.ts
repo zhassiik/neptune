@@ -8,9 +8,12 @@ import {
   signStreamToken,
   STREAM_TOKEN_TTL_SECONDS,
 } from "./token";
+import { encodeTusMetadata } from "@/lib/stream-uploads/rules";
 
 /** Пайдаланушыға құпия ақпаратсыз көрсетілетін қате */
 export class StreamConfigError extends Error {}
+/** Видео Cloudflare-да жоқ (404) */
+export class StreamNotFoundError extends StreamConfigError {}
 
 interface StreamConfig {
   accountId: string | null;
@@ -41,7 +44,8 @@ export function getStreamConfig(): StreamConfig {
   }
   const keyId = env.CLOUDFLARE_STREAM_SIGNING_KEY_ID?.trim() || null;
   const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim() || null;
-  const apiToken = env.CLOUDFLARE_API_TOKEN?.trim() || null;
+  // CLOUDFLARE_STREAM_API_TOKEN — балама атау (бұрынғы CLOUDFLARE_API_TOKEN да жұмыс істейді)
+  const apiToken = env.CLOUDFLARE_STREAM_API_TOKEN?.trim() || env.CLOUDFLARE_API_TOKEN?.trim() || null;
 
   // Token жасаудың екі жолы: signing key (ұсынылады) немесе API token (резерв)
   if (!(keyId && privateKey) && !(accountId && apiToken)) {
@@ -92,7 +96,7 @@ async function cfFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = (await res.json().catch(() => null)) as CfEnvelope<T> | null;
   if (!res.ok || !body?.success) {
     const message = body?.errors?.map((e) => e.message).join("; ") || `HTTP ${res.status}`;
-    if (res.status === 404) throw new StreamConfigError("Бұл Video UID Cloudflare Stream-да табылмады");
+    if (res.status === 404) throw new StreamNotFoundError("Бұл Video UID Cloudflare Stream-да табылмады");
     if (res.status === 401 || res.status === 403) throw new StreamConfigError("Cloudflare API token-ның Stream рұқсаты жоқ немесе қате");
     throw new Error(`Cloudflare API: ${message}`);
   }
@@ -114,7 +118,7 @@ interface CfVideo {
   duration: number;
   requireSignedURLs: boolean;
   allowedOrigins: string[];
-  status?: { state?: string };
+  status?: { state?: string; errReasonCode?: string };
 }
 
 function toInfo(v: CfVideo): StreamVideoInfo {
@@ -153,4 +157,97 @@ export async function secureVideo(uid: string) {
     body: JSON.stringify({ uid, requireSignedURLs: true, allowedOrigins }),
   });
   return toInfo(result);
+}
+
+/* ---------------------- Сайттан тікелей жүктеу (tus) ---------------------- */
+
+/** Cloudflare жүктеуді қабылдамады (квота, шектеу т.б.) — мәтіні мұғалімге түсінікті */
+export class StreamUploadError extends Error {}
+
+/** Видеоның толық күйі (өңдеу қатесінің коды да) */
+export async function getStreamVideoState(uid: string) {
+  const v = await cfFetch<CfVideo>(`/stream/${uid}`);
+  return {
+    ...toInfo(v),
+    errReasonCode: v.status?.errReasonCode ?? null,
+  };
+}
+
+/**
+ * Direct Creator Upload (tus): сервер бір реттік жүктеу сілтемесін жасайды,
+ * файлды браузер Cloudflare-ға тікелей жібереді (Vercel арқылы өтпейді).
+ * Video UID жауаптың stream-media-id header-інен алынады (Location-нан парсингтеу ұсынылмайды).
+ */
+export async function createDirectTusUpload(input: { sizeBytes: number; name: string; maxDurationSeconds: number; expiresAt: Date }) {
+  const { accountId, apiToken } = getStreamConfig();
+  if (!accountId || !apiToken) throw new StreamConfigError("CLOUDFLARE_ACCOUNT_ID және CLOUDFLARE_API_TOKEN орнатылмаған");
+
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream?direct_user=true`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(input.sizeBytes),
+      "Upload-Metadata": encodeTusMetadata({
+        name: input.name,
+        requiresignedurls: null,
+        maxDurationSeconds: String(input.maxDurationSeconds),
+        expiry: input.expiresAt.toISOString().replace(/\.\d{3}Z$/, "Z"),
+      }),
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (res.status !== 201) {
+    const text = await res.text().catch(() => "");
+    let message = text.slice(0, 300);
+    try {
+      const body = JSON.parse(text) as CfEnvelope<unknown>;
+      message = body.errors?.map((e) => e.message).join("; ") || message;
+    } catch {
+      /* мәтін JSON емес */
+    }
+    if (res.status === 401 || res.status === 403) throw new StreamConfigError("Cloudflare API token-ның Stream рұқсаты жоқ немесе қате");
+    if (/quota|capacity|storage|minutes|limit/i.test(message)) {
+      throw new StreamUploadError("Cloudflare Stream-дағы орын (минут лимиті) жетпейді. Ескі видеоларды өшіріңіз немесе тарифті ұлғайтыңыз");
+    }
+    if (res.status === 413) throw new StreamUploadError("Файл Cloudflare шегінен үлкен");
+    throw new Error(`Cloudflare tus: HTTP ${res.status} ${message}`);
+  }
+
+  const uploadUrl = res.headers.get("location");
+  const uid = res.headers.get("stream-media-id")?.trim().toLowerCase() ?? "";
+  if (!uploadUrl || !/^https:\/\//.test(uploadUrl) || !/^[a-f0-9]{32}$/.test(uid)) {
+    throw new Error("Cloudflare tus: Location немесе stream-media-id жоқ");
+  }
+  return { uploadUrl, uid };
+}
+
+/**
+ * Жүктелген видеоның баптаулары: signed URL міндетті, тек сайт домендері, сайттағы жазбаны табуға арналған meta.
+ * meta-да құпия немесе жеке дерек жоқ: тек ішкі UUID-тер және файл атауы.
+ */
+export async function configureUploadedVideo(uid: string, meta: Record<string, string>) {
+  const current = await getVideoInfo(uid).catch(() => null);
+  const allowedOrigins = [...new Set([...(current?.allowedOrigins ?? []), ...desiredAllowedOrigins()])];
+  await cfFetch<CfVideo>(`/stream/${uid}`, {
+    method: "POST",
+    body: JSON.stringify({ uid, requireSignedURLs: true, allowedOrigins, meta }),
+  });
+}
+
+/** Cloudflare-дан видеоны өшіру. Видео бұрын өшірілген болса (404) — сәтті деп саналады */
+export async function deleteStreamVideo(uid: string) {
+  const { accountId, apiToken } = getStreamConfig();
+  if (!accountId || !apiToken) throw new StreamConfigError("CLOUDFLARE_ACCOUNT_ID және CLOUDFLARE_API_TOKEN орнатылмаған");
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${apiToken}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (res.ok || res.status === 404) return;
+  if (res.status === 401 || res.status === 403) throw new StreamConfigError("Cloudflare API token-ның Stream рұқсаты жоқ немесе қате");
+  throw new Error(`Cloudflare delete: HTTP ${res.status}`);
 }

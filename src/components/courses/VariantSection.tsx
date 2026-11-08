@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { CalendarClock, ChevronDown, ClipboardList, ExternalLink, Lock, NotebookPen, PlayCircle, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardList, ExternalLink, Lock, NotebookPen, PencilLine, PlayCircle, Trophy } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatMinutes, hasVideo, variantHeading } from "@/lib/video";
-import { contestPhase, formatPoints, formatWindow, homeworkPoints, HOMEWORK_LABELS } from "@/lib/weekly";
 import { cn, formatDateTime } from "@/lib/utils";
 import type { HomeworkCheck, HomeworkStatus, TestVariant } from "@/lib/types";
 import { StartAttemptButton } from "./StartAttemptButton";
@@ -15,13 +14,21 @@ export interface VariantProgress {
   attemptsCount: number;
 }
 
-const STATUS_TONE: Record<HomeworkStatus, string> = {
-  on_time: "bg-emerald-50 text-emerald-700",
-  late: "bg-amber-50 text-amber-800",
-  missing: "bg-red-50 text-red-700",
-};
+/** Куратордың белгісі: расталды (✓), кеш жіберілді немесе жоқ (missed) */
+function HomeworkMark({ status }: { status: HomeworkStatus | null }) {
+  if (status === "on_time") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+        <CheckCircle2 className="size-3.5" /> Расталды
+      </span>
+    );
+  }
+  if (status === "late") return <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">Кеш жіберілді</span>;
+  if (status === "missing") return <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">Missed</span>;
+  return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">Тексерілмеді</span>;
+}
 
-/** Курс бетіндегі бір бөлім: «НҰСҚА N. ...» → тест + видео-талдау + черновик/конспект */
+/** Курс бетіндегі бір бөлім: «НҰСҚА N. ...» → тест + видео-талдау + черновик + конспект */
 export function VariantSection({
   variant,
   courseSlug,
@@ -30,7 +37,6 @@ export function VariantSection({
   defaultOpen,
   locked = false,
   homework,
-  weekTitle,
   isAdmin = false,
 }: {
   variant: TestVariant;
@@ -42,15 +48,18 @@ export function VariantSection({
   locked?: boolean;
   /** Оқушының черновик/конспект бағасы */
   homework?: HomeworkCheck;
-  weekTitle?: string;
   isAdmin?: boolean;
 }) {
   const n = variant.position;
   const withVideo = hasVideo(variant);
-  const withHomework = !!variant.classroom_url;
-  const lessons = 1 + (withVideo ? 1 : 0) + (withHomework ? 1 : 0);
-  const phase = contestPhase(variant.contest_starts_at, variant.contest_ends_at);
-  const notYetOpen = phase === "upcoming" && !isAdmin;
+  const draftUrl = variant.draft_url || variant.classroom_url || null;
+  const notesUrl = variant.notes_url || variant.classroom_url || null;
+  // Сілтемесі жоқ бөлім оқушыға көрсетілмейді; әкімші «сілтеме қойылмаған» деп көреді
+  const homeworkItems = [
+    { kind: "draft" as const, label: "Черновик", url: draftUrl, status: homework?.draft_status ?? null },
+    { kind: "notes" as const, label: "Конспект", url: notesUrl, status: homework?.notes_status ?? null },
+  ].filter((i) => i.url || isAdmin);
+  const lessons = 1 + (withVideo ? 1 : 0) + homeworkItems.length;
   const lockedBadge = (
     <span className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500" title="Бұл курсқа рұқсатыңыз жоқ">
       <Lock className="size-4" /> Рұқсат жоқ
@@ -65,11 +74,6 @@ export function VariantSection({
         <ChevronDown className="size-5 shrink-0 text-slate-500 transition group-open:rotate-180" />
         <span className="min-w-0 flex-1">
           <span className="block font-display text-base font-bold text-navy-900 sm:text-lg">{variantHeading(variant)}</span>
-          {weekTitle && phase !== "none" && (
-            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
-              <Trophy className="size-3.5" /> Апта үздігі · {weekTitle}
-            </span>
-          )}
         </span>
         {progress?.lastScore != null && (
           <Badge tone="green" className="hidden sm:inline-flex">
@@ -80,24 +84,6 @@ export function VariantSection({
       </summary>
 
       <div className="border-t border-slate-100">
-        {/* Апта үздігі: уақыт аралығы */}
-        {phase !== "none" && variant.contest_starts_at && variant.contest_ends_at && (
-          <div
-            className={cn(
-              "flex flex-wrap items-center gap-2 px-5 py-3 text-sm sm:px-7",
-              phase === "live" ? "bg-emerald-50 text-emerald-800" : phase === "upcoming" ? "bg-amber-50 text-amber-900" : "bg-slate-50 text-slate-600",
-            )}
-          >
-            {phase === "live" ? <Zap className="size-4" /> : <CalendarClock className="size-4" />}
-            <span>
-              <b>Апта үздігі:</b> {formatWindow(variant.contest_starts_at, variant.contest_ends_at)}.{" "}
-              {phase === "upcoming" && "Нұсқа осы уақытта ашылады — тек осы аралықтағы бірінші талпыныс есептеледі."}
-              {phase === "live" && "Қазір жүріп жатыр! Аралық ішінде басталып, тапсырылған бірінші талпыныс есептеледі."}
-              {phase === "ended" && "Аяқталды. Енді нұсқаны жаттығу үшін тапсыра аласыз (рейтингке есептелмейді)."}
-            </span>
-          </div>
-        )}
-
         {/* Тест */}
         <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div className="flex items-center gap-3">
@@ -122,10 +108,6 @@ export function VariantSection({
               <ButtonLink href={`/test/${progress.activeAttemptId}`} size="sm">
                 Жалғастыру
               </ButtonLink>
-            ) : notYetOpen ? (
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-                <Lock className="size-4" /> {formatDateTime(variant.contest_starts_at)}-де ашылады
-              </span>
             ) : (
               <>
                 {progress?.lastAttemptId && (
@@ -138,63 +120,6 @@ export function VariantSection({
             )}
           </div>
         </div>
-
-        {/* Черновик және конспект */}
-        {withHomework && (
-          <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-            <div className="flex items-start gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600">
-                <NotebookPen className="size-5" />
-              </span>
-              <div>
-                <div className="font-semibold text-navy-900">Черновик және конспект</div>
-                <div className="text-sm text-slate-500">
-                  {variant.homework_deadline ? (
-                    <>
-                      Дедлайн: <b className="text-navy-900">{formatDateTime(variant.homework_deadline)}</b>
-                    </>
-                  ) : (
-                    "Classroom-ға салыңыз"
-                  )}{" "}
-                  · черновик +5, конспект +10 (кешіксе — жартысы)
-                </div>
-                {loggedIn && !locked && (
-                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold">
-                    {(["draft", "notes"] as const).map((kind) => {
-                      const status = kind === "draft" ? homework?.draft_status : homework?.notes_status;
-                      const label = kind === "draft" ? "Черновик" : "Конспект";
-                      return status ? (
-                        <span key={kind} className={cn("rounded-full px-2.5 py-1", STATUS_TONE[status])}>
-                          {label}: {HOMEWORK_LABELS[status]} (+{formatPoints(homeworkPoints(status, kind))})
-                        </span>
-                      ) : (
-                        <span key={kind} className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">
-                          {label}: тексерілмеді
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-            {locked ? (
-              lockedBadge
-            ) : loggedIn ? (
-              <a
-                href={variant.classroom_url!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-white transition hover:bg-amber-600 active:scale-[0.97]"
-              >
-                Classroom-ға салу <ExternalLink className="size-4" />
-              </a>
-            ) : (
-              <Link href={loginHref} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100">
-                <Lock className="size-4" /> Кіру
-              </Link>
-            )}
-          </div>
-        )}
 
         {/* Видео-талдау */}
         {withVideo && (
@@ -221,6 +146,50 @@ export function VariantSection({
             )}
           </div>
         )}
+
+        {/* Черновик және конспект: әрқайсысы өз Classroom тапсырмасына апарады, куратор тексерсе — ✓ */}
+        {homeworkItems.map((item) => (
+          <div key={item.kind} className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4 sm:px-7">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", item.kind === "draft" ? "bg-amber-50 text-amber-600" : "bg-violet-50 text-violet-600")}>
+                {item.kind === "draft" ? <PencilLine className="size-5" /> : <NotebookPen className="size-5" />}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-semibold text-navy-900">{item.label}</span>
+                  {loggedIn && !locked && <HomeworkMark status={item.status} />}
+                </div>
+                <div className="text-sm text-slate-500">
+                  {variant.homework_deadline ? (
+                    <>
+                      Дедлайн: <b className="text-navy-900">{formatDateTime(variant.homework_deadline)}</b>
+                    </>
+                  ) : (
+                    "Google Classroom-ға салыңыз"
+                  )}
+                </div>
+              </div>
+            </div>
+            {locked ? (
+              lockedBadge
+            ) : !loggedIn ? (
+              <Link href={loginHref} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100">
+                <Lock className="size-4" /> Кіру
+              </Link>
+            ) : item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50/50 hover:text-brand-700 active:scale-[0.97]"
+              >
+                Classroom <ExternalLink className="size-4" />
+              </a>
+            ) : (
+              <span className="shrink-0 text-xs text-slate-400">Сілтеме қойылмаған</span>
+            )}
+          </div>
+        ))}
       </div>
     </details>
   );
