@@ -83,6 +83,7 @@ export function SecureVideoPlayer({
   const [menu, setMenu] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [fullscreen, setFullscreen] = useState<FullscreenMode>("none");
+  const [viewport, setViewport] = useState<{ w: number; h: number } | null>(null);
 
   /* -------------------------- Signed URL алу -------------------------- */
 
@@ -251,18 +252,26 @@ export function SecureVideoPlayer({
       await (document.exitFullscreen?.() ?? d.webkitExitFullscreen?.());
       return;
     }
-    try {
-      // Контейнерді (видео + watermark) толық экранға шығарамыз — watermark жасырылмайды
-      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
-      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-      else throw new Error("unsupported");
+    const d = document as Document & { webkitFullscreenEnabled?: boolean };
+    const supported = !!(document.fullscreenEnabled || d.webkitFullscreenEnabled) && !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    if (supported) {
       try {
-        await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape");
+        // Контейнерді (видео + watermark) толық экранға шығарамыз — watermark жасырылмайды
+        if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+        else await el.webkitRequestFullscreen?.();
+        // Кейбір браузерлер қате бермей-ақ ештеңе істемейді — шынымен ашылғанын тексереміз
+        if (!isNativeFs()) await new Promise((r) => setTimeout(r, 250));
+        if (isNativeFs()) {
+          try {
+            await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape");
+          } catch {}
+          return;
+        }
       } catch {}
-    } catch {
-      // iPhone: элементті толық экранға шығару мүмкін емес → бет үстіне толық экран режимі
-      setFullscreen("pseudo");
     }
+    // iPhone: элементті толық экранға шығару мүмкін емес → бет үстіне толық экран режимі
+    // (телефон тік тұрса, плеер 90° бұрылып, бүкіл экранды алады)
+    setFullscreen("pseudo");
   }, [fullscreen]);
 
   useEffect(() => {
@@ -276,16 +285,35 @@ export function SecureVideoPlayer({
   }, []);
 
   useEffect(() => {
-    if (fullscreen !== "pseudo") return;
+    if (fullscreen !== "pseudo") {
+      setViewport(null);
+      return;
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const measure = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    measure();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFullscreen("none");
     window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    window.visualViewport?.addEventListener("resize", measure);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
     };
   }, [fullscreen]);
+
+  // Бет үстіндегі толық экран: телефон тік тұрса — плеерді 90° бұрып, көлденең көрсетеміз
+  const pseudoStyle: React.CSSProperties | undefined =
+    fullscreen === "pseudo" && viewport
+      ? viewport.h > viewport.w
+        ? { width: viewport.h, height: viewport.w, transformOrigin: "top left", transform: `translateX(${viewport.w}px) rotate(90deg)` }
+        : { width: viewport.w, height: viewport.h }
+      : undefined;
 
   const pokeControls = useCallback(() => {
     setControlsVisible(true);
@@ -335,12 +363,14 @@ export function SecureVideoPlayer({
       onTouchStart={pokeControls}
       onContextMenu={(e) => e.preventDefault()}
       className={cn(
-        "group/player relative overflow-hidden bg-black outline-none select-none focus-visible:ring-4 focus-visible:ring-brand-300",
-        fullscreen === "none" && "aspect-video w-full rounded-2xl shadow-lift",
-        fullscreen === "native" && "h-full w-full",
-        fullscreen === "pseudo" && "fixed inset-0 z-[100] h-[100dvh] w-screen",
+        // «relative» тек бет үстіндегі режимде емес кезде: әйтпесе «fixed»-ті басып кетеді
+        "group/player overflow-hidden bg-black outline-none select-none focus-visible:ring-4 focus-visible:ring-brand-300",
+        fullscreen === "none" && "relative aspect-video w-full rounded-2xl shadow-lift",
+        fullscreen === "native" && "relative h-full w-full",
+        fullscreen === "pseudo" && "fixed top-0 left-0 z-[1000] h-[100dvh] w-screen",
         playing && !showOverlayControls && "cursor-none",
       )}
+      style={pseudoStyle}
       aria-label={`Видеоплеер: ${title}`}
     >
       <video
