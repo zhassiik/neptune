@@ -11,7 +11,7 @@ export async function CourseGrid() {
   }
 
   const supabase = await createClient();
-  const { data } = await supabase.from("test_variants").select("course_id").eq("status", "published");
+  const { data } = await supabase.from("test_variants").select("course_id").eq("status", "published").eq("kind", "ubt");
   const counts = new Map<string, number>();
   for (const v of data ?? []) counts.set(v.course_id, (counts.get(v.course_id) ?? 0) + 1);
 

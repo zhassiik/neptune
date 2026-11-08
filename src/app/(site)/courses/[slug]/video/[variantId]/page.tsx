@@ -8,6 +8,9 @@ import { formatMinutes, variantHeading } from "@/lib/video";
 import { VideoPlayer } from "@/components/courses/VideoPlayer";
 import { SecureVideoPlayer } from "@/components/video/SecureVideoPlayer";
 import { getCourseAccess } from "@/lib/access";
+import { getPlatformSettings } from "@/lib/settings";
+import { accessRequestHref } from "@/lib/join-cta";
+import { WhatsAppAccessButton } from "@/components/courses/WhatsAppAccessButton";
 import { ButtonLink } from "@/components/ui/Button";
 import type { TestVariant } from "@/lib/types";
 
@@ -34,6 +37,7 @@ export default async function VideoPage({ params }: { params: Promise<{ slug: st
 
   // Курсқа рұқсат серверде тексеріледі (token API де қайта тексереді)
   const access = await getCourseAccess(supabase, user, course);
+  const accessHref = access.allowed ? null : accessRequestHref(await getPlatformSettings(), course.title);
 
   const { data: last } = await supabase
     .from("test_attempts")
@@ -68,6 +72,7 @@ export default async function VideoPage({ params }: { params: Promise<{ slug: st
                 </div>
                 <p className="font-semibold">Бұл видеоны көруге рұқсатыңыз жоқ</p>
                 <p className="mt-1 text-sm text-white/60">Рұқсат алу үшін мұғаліммен байланысыңыз.</p>
+                {accessHref && <WhatsAppAccessButton href={accessHref} className="mt-4" />}
               </div>
             </div>
           ) : variant.video_provider === "cloudflare" ? (

@@ -55,8 +55,8 @@ const TILE_TITLE: Record<StreakDayState, string> = {
 };
 
 /**
- * «Менің Жұлдызым»: жаңа нұсқа шыққан күні 00:00-ге дейін орындаса — жұлдыз өседі,
- * демалыс күндері сақталады, өткізіп алса — сөнеді. Барлық есеп серверде (computeStreak).
+ * «Менің Жұлдызым»: жаңа нұсқа шыққан күні (дс, сс, ср, жм, сб) 00:00-ге дейін орындаса — жұлдыз өседі,
+ * бейсенбі мен жексенбі (демалыс) сақталады, өткізіп алса — сөнеді. Барлық есеп серверде (computeStreak).
  */
 export function StarStreak({ streak }: { streak: StreakResult }) {
   const { count, week, today } = streak;
@@ -76,12 +76,12 @@ export function StarStreak({ streak }: { streak: StreakResult }) {
             </summary>
             <div className="absolute top-11 right-0 z-20 w-72 rounded-2xl border border-white/10 bg-space-950/95 p-4 text-sm leading-relaxed text-white/80 shadow-glow backdrop-blur">
               <p>
-                <b className="text-white">Жаңа нұсқа шыққан күні</b> сол нұсқаны 00:00-ге дейін орындасаң — жұлдызың <b className="text-amber-300">+1</b> өседі.
+                <b className="text-white">Дс, сс, ср, жм, сб</b> — жаңа нұсқа шығады. Сол күні 00:00-ге дейін орындасаң — жұлдызың <b className="text-amber-300">+1</b> өседі.
               </p>
               <p className="mt-2">
-                <b className="text-white">Демалыс күндері</b> (жаңа нұсқа жоқ) жұлдыз сақталады.
+                <b className="text-white">Бейсенбі мен жексенбі</b> — демалыс: жаңа нұсқа жоқ, жұлдыз сақталады.
               </p>
-              <p className="mt-2">Жаңа нұсқаны уақытында орындамасаң — жұлдыз сөнеді.</p>
+              <p className="mt-2">Жаңа нұсқаны сол күні орындамасаң — жұлдыз сөнеді.</p>
             </div>
           </details>
         </div>
@@ -118,7 +118,15 @@ export function StarStreak({ streak }: { streak: StreakResult }) {
                 <span className="font-bold text-white">Бүгін — демалыс күні</span>
                 <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/70">Демалыс</span>
               </div>
-              <p className="mt-1 text-sm text-white/65">Жаңа нұсқа жоқ — жұлдызың сақталды. Қаласаң, кез келген нұсқаны қайталап шығуға болады.</p>
+              <p className="mt-1 text-sm text-white/65">Бейсенбі мен жексенбі жаңа нұсқа шықпайды — жұлдызың сақталды. Қаласаң, кез келген нұсқаны қайталап шығуға болады.</p>
+            </>
+          ) : today.kind === "waiting" ? (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-bold text-white">Бүгінгі нұсқа әлі шыққан жоқ</span>
+                <span className="rounded-full bg-neptune-400/15 px-2.5 py-0.5 text-xs font-semibold text-neptune-200">Күтуде</span>
+              </div>
+              <p className="mt-1 text-sm text-white/65">Жаңа нұсқа таңғы 5-те шығады. Шыққан соң 00:00-ге дейін орында — жұлдызың өседі.</p>
             </>
           ) : today.done ? (
             <div className="flex items-center justify-between gap-3">

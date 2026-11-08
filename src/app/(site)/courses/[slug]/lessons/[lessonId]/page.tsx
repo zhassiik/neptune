@@ -5,6 +5,9 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCourseBySlug } from "@/lib/courses";
 import { getCourseAccess } from "@/lib/access";
+import { getPlatformSettings } from "@/lib/settings";
+import { accessRequestHref } from "@/lib/join-cta";
+import { WhatsAppAccessButton } from "@/components/courses/WhatsAppAccessButton";
 import { formatMinutes } from "@/lib/video";
 import { PLANETS, isPlanetKey } from "@/lib/planets";
 import { lessonHasVideo, loadCourseStructure } from "@/lib/course-structure";
@@ -34,6 +37,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
 
   // Курсқа рұқсат серверде тексеріледі (token API де қайта тексереді)
   const access = await getCourseAccess(supabase, user, course);
+  const accessHref = access.allowed ? null : accessRequestHref(await getPlatformSettings(), course.title);
 
   // Блок ішіндегі көрсетуге болатын видео-сабақтар: алдыңғы / келесі
   const videos = mod.lessons.filter((l) => l.kind === "video" && lessonHasVideo(l));
@@ -72,6 +76,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
                 </div>
                 <p className="font-semibold">Бұл видеоны көруге рұқсатыңыз жоқ</p>
                 <p className="mt-1 text-sm text-white/60">Рұқсат алу үшін мұғаліммен байланысыңыз.</p>
+                {accessHref && <WhatsAppAccessButton href={accessHref} className="mt-4" />}
               </div>
             </div>
           ) : !lessonHasVideo(lesson) ? (

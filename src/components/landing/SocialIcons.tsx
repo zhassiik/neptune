@@ -22,6 +22,11 @@ const ICONS = {
   ),
 };
 
+/** WhatsApp белгісі (батырмаларда қолдану үшін) */
+export function WhatsAppIcon({ className }: { className?: string }) {
+  return <span className={cn("inline-flex [&>svg]:size-full", className)}>{ICONS.whatsapp}</span>;
+}
+
 export function socialLinks(s: Pick<PlatformSettings, "instagram_url" | "telegram_url" | "whatsapp_phone">) {
   const wa = s.whatsapp_phone?.replace(/\D/g, "");
   return [

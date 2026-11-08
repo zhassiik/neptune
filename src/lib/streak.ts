@@ -2,11 +2,12 @@
  * «Менің Жұлдызым» — күнделікті серия (streak). Таза функциялар, уақыт белдеуі — Asia/Almaty (UTC+5, жазғы уақыт жоқ).
  *
  * Ереже:
- *  - Тапсырма күні = оқушыға қолжетімді курста жаңа нұсқа жарияланған күн.
+ *  - Бейсенбі мен жексенбі — тұрақты демалыс: жаңа нұсқа салынбайды, жұлдыз сақталады
+ *    (өспейді де, үзілмейді де). Сол күні кез келген нұсқа тапсырса — күн «жанып» тұрады.
+ *  - Қалған күндер (дс, сс, ср, жм, сб) — тапсырма күні: оқушыға қолжетімді курста сол күні жаңа нұсқа шығады.
  *    Сол күні 00:00-ге дейін сол күнгі жаңа нұсқалардың кем дегенде біреуін тапсырса — жұлдыз +1.
  *    Тапсырмаса — күн біткенде серия үзіледі (жұлдыз сөнеді).
- *  - Демалыс күні (жаңа нұсқа жоқ) — серия сақталады (өспейді де, үзілмейді де).
- *    Сол күні кез келген нұсқа тапсырса — күн «жанып» тұрады.
+ *  - Жұмыс күні нұсқа шықпай қалса (мереке т.б.) — ол күн де демалыс сияқты, серия сақталады.
  *  - Бүгінгі тапсырма күні әлі біткен жоқ: орындалмаса да серия үзілмейді (күтуде).
  */
 
@@ -25,6 +26,13 @@ function shiftDay(day: string, delta: number) {
 /** Дүйсенбі = 0 … Жексенбі = 6 */
 function weekdayIndex(day: string) {
   return (new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7;
+}
+
+/** Тұрақты демалыс күндері (дс = 0): бейсенбі және жексенбі */
+export const REST_WEEKDAYS: readonly number[] = [3, 6];
+
+export function isRestDay(day: string) {
+  return REST_WEEKDAYS.includes(weekdayIndex(day));
 }
 
 export type StreakDayState = "done" | "missed" | "pending" | "rest" | "future";
@@ -50,7 +58,8 @@ export interface StreakInput {
 export interface StreakResult {
   count: number;
   week: { day: string; label: string; state: StreakDayState; isToday: boolean }[];
-  today: { kind: "task" | "rest"; done: boolean; variants: StreakVariant[] };
+  /** task — бүгін жаңа нұсқа бар; rest — бейсенбі/жексенбі; waiting — жұмыс күні, бірақ нұсқа әлі шықпаған */
+  today: { kind: "task" | "rest" | "waiting"; done: boolean; variants: StreakVariant[] };
 }
 
 export const WEEKDAY_LABELS = ["дс", "сс", "ср", "бс", "жм", "сб", "жс"];
@@ -79,6 +88,7 @@ export function computeStreak(input: StreakInput): StreakResult {
   const tasks = new Map<string, StreakVariant[]>();
   for (const v of input.variants) {
     const day = almatyDay(v.publishedAt);
+    if (isRestDay(day)) continue; // демалыс күні шыққан нұсқа міндетті тапсырма емес
     tasks.set(day, [...(tasks.get(day) ?? []), v]);
   }
   // Тек сол күні (00:00-ге дейін) тапсырылғандар сол күнге саналады
@@ -111,6 +121,6 @@ export function computeStreak(input: StreakInput): StreakResult {
   return {
     count,
     week,
-    today: { kind: todayTasks.length ? "task" : "rest", done: todayState === "done", variants: todayTasks },
+    today: { kind: todayTasks.length ? "task" : isRestDay(today) ? "rest" : "waiting", done: todayState === "done", variants: todayTasks },
   };
 }

@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Clock, FileQuestion, ListChecks, PlayCircle } from "lucide-react";
+import { ChevronLeft, Clock, FileQuestion, ListChecks, Orbit, PlayCircle, TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { coverUrl, formatPrice, getCourseBySlug } from "@/lib/courses";
 import { getCourseAccess } from "@/lib/access";
 import { getPlatformSettings } from "@/lib/settings";
+import { accessRequestHref } from "@/lib/join-cta";
+import { WhatsAppAccessButton } from "@/components/courses/WhatsAppAccessButton";
 import { hasVideo } from "@/lib/video";
 import { CourseCover } from "@/components/courses/CourseCover";
 import { VariantSection, type VariantProgress } from "@/components/courses/VariantSection";
 import { EmptyState } from "@/components/ui/States";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
+import { SpaceBand } from "@/components/ui/SpaceBand";
 import type { TestVariant } from "@/lib/types";
 import { getMyHomework } from "@/lib/homework-server";
 import { loadCourseStructure, lessonHasVideo } from "@/lib/course-structure";
@@ -37,7 +40,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   const supabase = await createClient();
   const access = await getCourseAccess(supabase, user, course);
   const locked = !!user && !access.allowed && access.reason === "not_enrolled";
-  const contacts = locked ? await getPlatformSettings() : null;
+  const accessHref = locked ? accessRequestHref(await getPlatformSettings(), course.title) : null;
   let variants: TestVariant[] = [];
   if (open || isAdmin) {
     const { data, error } = await supabase
@@ -87,41 +90,58 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
   return (
     <div className="bg-slate-50/60">
-      <div className="container-page py-8 sm:py-12">
-        <Link href="/courses" className="inline-flex items-center gap-1 rounded-lg text-sm font-medium text-slate-500 transition hover:text-brand-600">
+      <SpaceBand innerClassName="py-8 sm:py-12">
+        <Link href="/courses" className="inline-flex items-center gap-1 rounded-lg text-sm font-medium text-white/60 transition hover:text-neptune-200">
           <ChevronLeft className="size-4" /> Курстар
         </Link>
 
-        <section className="card mt-4 grid gap-6 p-5 sm:p-7 md:grid-cols-[minmax(0,340px)_1fr] md:items-center">
-          <CourseCover url={coverUrl(course.cover_path)} title={course.title} priority sizes="(max-width: 768px) 100vw, 340px" />
+        <div className="mt-5 grid gap-6 md:grid-cols-[minmax(0,360px)_1fr] md:items-center md:gap-10">
+          <div className="rounded-3xl p-1.5 ring-1 ring-white/15 glass-dark">
+            <CourseCover url={coverUrl(course.cover_path)} title={course.title} priority sizes="(max-width: 768px) 100vw, 360px" />
+          </div>
           <div>
             {!open && (
               <Badge tone="amber" className="mb-3">
                 <Clock className="size-3.5" /> Жақында ашылады
               </Badge>
             )}
-            <h1 className="text-2xl leading-tight font-extrabold uppercase sm:text-4xl">{course.title}</h1>
-            {course.description && <p className="mt-3 max-w-2xl leading-relaxed text-slate-600">{course.description}</p>}
+            <h1 className="text-2xl leading-tight font-extrabold text-white uppercase sm:text-4xl">{course.title}</h1>
+            {course.description && <p className="mt-3 max-w-2xl leading-relaxed text-white/75">{course.description}</p>}
             <ul className="mt-5 flex flex-wrap gap-2 text-sm">
-              <li className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 font-medium text-brand-700">
-                <ListChecks className="size-4" /> {variants.length} нұсқа
-              </li>
+              {variants.length > 0 && (
+                <li className="glass-dark inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-neptune-200">
+                  <ListChecks className="size-4" /> {variants.length} нұсқа
+                </li>
+              )}
               {videos > 0 && (
-                <li className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 font-medium text-brand-700">
+                <li className="glass-dark inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-neptune-200">
                   <PlayCircle className="size-4" /> {videos} видео-талдау
                 </li>
               )}
-              {price && <li className="inline-flex items-center rounded-full bg-navy-800 px-3 py-1.5 font-semibold text-white">{price}</li>}
+              {structure.modules.length > 0 && (
+                <li className="glass-dark inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium text-neptune-200">
+                  <Orbit className="size-4" /> {structure.modules.length} тақырыптық блок
+                </li>
+              )}
+              {price && <li className="inline-flex items-center rounded-full bg-gradient-to-r from-brand-500 to-neptune-500 px-3.5 py-1.5 font-bold text-white shadow-glow">{price}</li>}
             </ul>
           </div>
-        </section>
+        </div>
+      </SpaceBand>
 
+      <div className="container-page pb-8 sm:pb-12">
         {locked && (
-          <Alert tone="warning" className="mt-6">
-            <b>Бұл курсқа рұқсатыңыз жоқ.</b> Нұсқалар мен видео-талдауларды ашу үшін мұғаліммен байланысыңыз
-            {contacts?.contact_phone && <> — {contacts.contact_phone}</>}
-            {contacts?.contact_email && <> · {contacts.contact_email}</>}.
-          </Alert>
+          <div role="status" className="mt-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5">
+            <div className="flex items-center gap-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
+                <TriangleAlert className="size-4.5" aria-hidden />
+              </span>
+              <p className="leading-snug">
+                <b>Бұл курсқа рұқсатыңыз жоқ.</b> Нұсқалар мен видео-талдауларды ашу үшін мұғаліммен байланысыңыз.
+              </p>
+            </div>
+            {accessHref && <WhatsAppAccessButton href={accessHref} className="shrink-0" />}
+          </div>
         )}
 
         {!open && isAdmin && (

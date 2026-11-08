@@ -13,3 +13,13 @@ export function joinCta(settings: Pick<PlatformSettings, "join_url" | "whatsapp_
   }
   return { href: fallbackHref, external: false };
 }
+
+/**
+ * Курсқа рұқсат сұрау: Баптаулардағы WhatsApp нөміріне дайын хабарламамен.
+ * Нөмір болмаса — «Курсқа қосылу» сілтемесі (join_url), ол да болмаса — null.
+ */
+export function accessRequestHref(settings: Pick<PlatformSettings, "join_url" | "whatsapp_phone">, courseTitle: string) {
+  const digits = settings.whatsapp_phone?.replace(/\D/g, "");
+  if (digits) return `https://wa.me/${digits}?text=${encodeURIComponent(`Сәлеметсіз бе! «${courseTitle}» курсына рұқсат алғым келеді`)}`;
+  return settings.join_url || null;
+}
