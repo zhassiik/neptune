@@ -12,6 +12,9 @@ import { attachDeviceToSession, releaseCurrentDevice } from "@/lib/devices/serve
 import { CAPTCHA_AFTER_FAILURES, hashEmail, loginRateRecord, loginRateStatus } from "@/lib/security/login-guard";
 import { turnstileEnabled, verifyTurnstile } from "@/lib/security/turnstile";
 import { notifyNewDevice } from "@/lib/security/notify";
+import type { Profile } from "@/lib/types";
+import { needsContacts } from "@/lib/profile-completion";
+import { contactFields, DIFFERENT_PHONES_ERROR, differentPhones, fullNameField } from "@/lib/profile-schema";
 
 export interface AuthState {
   error?: string;
@@ -77,7 +80,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     return { error: device.message, values };
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", data.user.id).maybeSingle();
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle<Profile>();
   if (device.isNew && data.user.email) {
     const info = parseUserAgent(hdrs.get("user-agent"));
     void notifyNewDevice({ to: data.user.email, name: profile?.full_name ?? "", ...info, location: null });
@@ -86,24 +89,28 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
 
   const next = formData.get("next");
   if (!next && profile?.role === "admin") redirect("/admin");
+  // Телефондары толтырылмаған оқушы — алдымен профиль
+  if (needsContacts(profile)) redirect(`/cabinet/profile?complete=1&next=${encodeURIComponent(safeNext(next))}`);
   redirect(safeNext(next));
 }
 
 const registerSchema = z
   .object({
-    full_name: z.string().trim().min(2, "Аты-жөніңізді толық жазыңыз").max(120, "Тым ұзын"),
+    full_name: fullNameField,
     email: z.string().trim().min(1, "Email енгізіңіз").email("Email форматы дұрыс емес"),
+    ...contactFields,
     password: z.string().min(8, "Құпиясөз кемінде 8 таңбадан тұруы керек").max(72, "Құпиясөз тым ұзын"),
     password_confirm: z.string(),
   })
   .refine((d) => d.password === d.password_confirm, {
     message: "Құпиясөздер сәйкес келмейді",
     path: ["password_confirm"],
-  });
+  })
+  .refine(differentPhones, DIFFERENT_PHONES_ERROR);
 
 export async function signUp(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const raw = Object.fromEntries(["full_name", "email", "password", "password_confirm"].map((k) => [k, String(formData.get(k) ?? "")]));
-  const values = { full_name: raw.full_name, email: raw.email };
+  const raw = Object.fromEntries(["full_name", "email", "phone", "parent_phone", "password", "password_confirm"].map((k) => [k, String(formData.get(k) ?? "")]));
+  const values = { full_name: raw.full_name, email: raw.email, phone: raw.phone, parent_phone: raw.parent_phone };
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) return { fieldErrors: collectFieldErrors(parsed.error), values };
 
@@ -114,7 +121,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.full_name },
+      data: { full_name: parsed.data.full_name, phone: parsed.data.phone, parent_phone: parsed.data.parent_phone },
       emailRedirectTo: `${origin}/auth/callback?next=/courses`,
     },
   });

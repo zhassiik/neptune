@@ -57,13 +57,13 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
         <div className="mt-4 flex items-center gap-3">
           <Planet planet={planet} className="w-12" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-brand-600">
-              №{mod.position}. {mod.title} · {PLANETS[planet].name}
-            </p>
-            <h1 className="text-2xl font-extrabold sm:text-3xl">
+<h1 className="text-2xl font-extrabold sm:text-3xl">
               {lesson.title}
               {duration && <span className="ml-3 align-middle text-base font-medium text-slate-500">{duration}</span>}
             </h1>
+            <p className="mt-1 text-sm font-semibold text-brand-600">
+              №{mod.position}. {mod.title} · {PLANETS[planet].name}
+            </p>
           </div>
         </div>
 

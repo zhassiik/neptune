@@ -29,7 +29,7 @@ export function Countdown({ title, date, cta }: { title: string; date: string; c
   return (
     <section className="space-bg relative isolate overflow-hidden py-14 sm:py-20">
       {/* Фон қозғалысы: тұман толқиды, жұлдыздар жылжиды, орбита бойымен кометалар айналады */}
-      <div className="nebula-drift pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[140%] w-[70%] rounded-full bg-[radial-gradient(closest-side,rgb(79_220_251/0.16),rgb(124_92_255/0.08)_55%,transparent)] blur-2xl" aria-hidden />
+      <div className="nebula-drift pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[140%] w-[70%] rounded-full bg-[radial-gradient(closest-side,rgb(79_220_251/0.16),rgb(124_92_255/0.08)_55%,transparent)]" aria-hidden />
       <div className="stars stars-drift" aria-hidden />
       <svg viewBox="0 0 1200 400" className="pointer-events-none absolute inset-0 size-full text-neptune-400/20" fill="none" preserveAspectRatio="none" aria-hidden>
         <defs>

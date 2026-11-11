@@ -34,10 +34,12 @@ export function CourseModules({ modules, courseSlug, access }: { modules: Course
               <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-3 transition select-none hover:bg-white/5 sm:gap-5 sm:px-5 sm:py-4 [&::-webkit-details-marker]:hidden">
                 <Planet planet={m.planet} className="w-14 sm:w-[72px]" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-semibold tracking-[0.2em] text-neptune-300/80 uppercase">{PLANETS[m.planet].name}</span>
                   <span className="block font-display text-base font-extrabold text-white uppercase sm:text-lg">
                     №{m.position}. {m.title}
                   </span>
+                  {!m.title.toLowerCase().includes(PLANETS[m.planet].name.toLowerCase()) && (
+                    <span className="mt-0.5 block text-xs text-neptune-200/75">{PLANETS[m.planet].name}</span>
+                  )}
                 </span>
                 <span className="shrink-0 text-sm text-white/55">{m.lessons.length} сабақ</span>
                 <ChevronDown className="size-5 shrink-0 text-white/60 transition group-open:rotate-180" />
@@ -103,12 +105,12 @@ function LessonItem({ lesson, courseSlug, access, loginHref }: { lesson: CourseL
       </Link>
     );
   } else {
-    action = <span className="px-3 text-xs text-white/40">Жақында</span>;
+    action = <span className="px-3 text-xs text-white/65">Жақында</span>;
   }
 
   return (
-    <li className="flex flex-col gap-3 px-3 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-      <div className="flex min-w-0 items-center gap-3">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3.5 sm:px-5">
+      <div className="flex min-w-[12rem] flex-1 items-center gap-3">
         <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${isTest ? "bg-neptune-400/15 text-neptune-300" : "bg-white/10 text-white"}`}>
           {isTest ? <ClipboardList className="size-5" /> : <PlayCircle className="size-5" />}
         </span>
@@ -117,7 +119,7 @@ function LessonItem({ lesson, courseSlug, access, loginHref }: { lesson: CourseL
           <div className="text-xs text-white/55">{isTest ? "Тест" : `Видео-сабақ${duration ? ` · ${duration}` : ""}`}</div>
         </div>
       </div>
-      <div className="shrink-0 self-end sm:self-auto">{action}</div>
+      <div className="ml-auto shrink-0">{action}</div>
     </li>
   );
 }

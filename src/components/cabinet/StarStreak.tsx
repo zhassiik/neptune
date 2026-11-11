@@ -16,7 +16,7 @@ function StarIcon({ className }: { className?: string }) {
 function NeptunePlanet({ className }: { className?: string }) {
   return (
     <div className={cn("relative aspect-square", className)} aria-hidden>
-      <div className="absolute inset-[-12%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.45),transparent_65%)] blur-xl" />
+      <div className="absolute inset-[-12%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.45),transparent_65%)]" />
       <svg viewBox="0 0 200 200" className="absolute inset-0 size-full overflow-visible">
         <ellipse cx="100" cy="104" rx="118" ry="26" transform="rotate(-18 100 104)" fill="none" stroke="#85eaff" strokeOpacity="0.35" strokeWidth="5" />
       </svg>

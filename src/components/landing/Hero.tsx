@@ -64,7 +64,7 @@ export function Hero({ settings, cta }: { settings: PlatformSettings; cta: { hre
         <div className="relative order-first mx-auto w-full max-w-[340px] animate-fade-in sm:max-w-[440px] lg:order-none lg:max-w-[520px]">
           <div className="relative aspect-square">
             {/* Планета жарқылы */}
-            <div className="absolute inset-[4%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.35),transparent_65%)] blur-2xl" aria-hidden />
+            <div className="absolute inset-[4%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.35),transparent_65%)]" aria-hidden />
             {/* Айналатын орбита */}
             <div className="absolute inset-0 animate-orbit" aria-hidden>
               <svg viewBox="0 0 520 520" className="size-full" fill="none">

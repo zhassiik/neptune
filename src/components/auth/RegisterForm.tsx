@@ -25,6 +25,14 @@ export function RegisterForm({ next }: { next?: string }) {
       <Field id="email" label="Email" error={fe.email}>
         <Input id="email" name="email" type="email" autoComplete="email" placeholder="example@mail.kz" defaultValue={state.values?.email} invalid={!!fe.email} required />
       </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field id="phone" label="Телефон нөміріңіз" error={fe.phone}>
+          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+7 700 123 45 67" defaultValue={state.values?.phone} invalid={!!fe.phone} required />
+        </Field>
+        <Field id="parent_phone" label="Ата-анаңыздың нөмірі" error={fe.parent_phone}>
+          <Input id="parent_phone" name="parent_phone" type="tel" inputMode="tel" placeholder="+7 701 765 43 21" defaultValue={state.values?.parent_phone} invalid={!!fe.parent_phone} required />
+        </Field>
+      </div>
       <Field id="password" label="Құпиясөз" error={fe.password} hint="Кемінде 8 таңба">
         <PasswordInput id="password" name="password" autoComplete="new-password" invalid={!!fe.password} required />
       </Field>

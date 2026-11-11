@@ -28,15 +28,15 @@ function Ring({ ring, part }: { ring: RingStyle; part: "back" | "front" }) {
 export function Planet({ planet, className, slow = false }: { planet: PlanetKey; className?: string; slow?: boolean }) {
   const p = PLANETS[planet];
   return (
-    <div className={cn("relative aspect-square shrink-0", className)} aria-hidden>
-      <div className="absolute inset-[-14%] rounded-full blur-xl" style={{ background: `radial-gradient(circle, ${p.glow}, transparent 65%)` }} />
+    <div className={cn("relative aspect-square shrink-0", className)} data-anim-scope aria-hidden>
+      <div className="absolute inset-[-14%] rounded-full" style={{ background: `radial-gradient(circle, ${p.glow}, transparent 62%)` }} />
       {p.ring && <Ring ring={p.ring} part="back" />}
       <div
         className="absolute inset-[10%] overflow-hidden rounded-full"
         style={{ background: p.base, boxShadow: p.atmosphere ? `0 0 0 1px ${p.atmosphere}, 0 0 10px 1px ${p.atmosphere}` : undefined }}
       >
-        <div className={cn("planet-surface absolute inset-0", slow && "[animation-duration:60s]")} style={{ backgroundImage: p.texture }} />
-        {p.clouds && <div className={cn("planet-surface absolute inset-0", slow ? "[animation-duration:42s]" : "[animation-duration:19s]")} style={{ backgroundImage: p.clouds }} />}
+        <div className={cn("planet-surface", slow && "[animation-duration:60s]")} style={{ backgroundImage: p.texture }} />
+        {p.clouds && <div className={cn("planet-surface", slow ? "[animation-duration:42s]" : "[animation-duration:19s]")} style={{ backgroundImage: p.clouds }} />}
         {p.overlay && <div className="absolute inset-0" style={{ backgroundImage: p.overlay }} />}
         {/* Көлеңке мен жарық — қозғалмайды */}
         <div className="absolute inset-0 rounded-full shadow-[inset_-14px_-12px_28px_rgb(2_6_23/0.75),inset_8px_6px_18px_rgb(255_255_255/0.25)]" />

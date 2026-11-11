@@ -13,16 +13,16 @@ export default function CoursesPage() {
         <SectionHeading
           as="h1"
           dark
-          eyebrow="Neptune UBT"
           title={
             <>
-              ҰБТ математикасына <span className="text-neptune-gradient">дайындық курстары</span>
+              ҰБТ математикасына <span className="text-neptune-300">дайындық курстары</span>
             </>
           }
           subtitle="Күнделікті нұсқалар, видео-талдаулар және жүйелі дайындық — өзіңе лайық курсты таңда."
         />
       </SpaceBand>
       <div className="container-page relative -mt-16 pb-16 sm:-mt-20 sm:pb-20">
+        <h2 className="sr-only">Барлық курстар</h2>
         <CourseGrid />
       </div>
     </>

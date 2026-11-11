@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Montserrat } from "next/font/google";
 import "./globals.css";
+import { AnimationScopes } from "@/components/layout/AnimationScopes";
 
 // cyrillic-ext — қазақ әріптері (ә, ғ, қ, ң, ө, ұ, ү, һ, і) үшін міндетті
 const inter = Inter({
@@ -33,7 +34,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="kk" className={`${inter.variable} ${montserrat.variable}`}>
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        {children}
+        <AnimationScopes />
+      </body>
     </html>
   );
 }

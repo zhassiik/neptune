@@ -24,7 +24,7 @@ export function CourseCard({ course, variantsCount }: { course: Course; variants
       </div>
       <h3 className="mt-5 min-h-[3.25rem] text-lg leading-snug font-bold uppercase">{course.title}</h3>
       <div className="mt-2 flex items-center justify-between gap-3 text-sm text-slate-500">
-        {price && <span className="font-display text-2xl font-extrabold text-navy-900">{price}</span>}
+        {price && <span className="font-display text-2xl font-extrabold text-navy-900 tabular-nums">{price}</span>}
         {open && variantsCount != null && variantsCount > 0 && <span>{variantsCount} нұсқа</span>}
       </div>
       {open ? (

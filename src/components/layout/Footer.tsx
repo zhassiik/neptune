@@ -26,17 +26,17 @@ export async function Footer() {
 
         <div>
           <h2 className="text-base font-bold text-white">Байланыс</h2>
-          <ul className="mt-3 space-y-2 text-sm">
+          <ul className="mt-1 space-y-0 text-sm">
             {phoneHref && (
               <li>
-                <a href={phoneHref} className="inline-flex items-center gap-2 text-neptune-300 underline-offset-4 hover:underline">
+                <a href={phoneHref} className="inline-flex min-h-11 items-center gap-2 text-neptune-300 underline-offset-4 hover:underline">
                   <Phone className="size-4" /> {s.contact_phone}
                 </a>
               </li>
             )}
             {s.contact_email && (
               <li>
-                <a href={`mailto:${s.contact_email}`} className="inline-flex items-center gap-2 text-white/70 transition hover:text-neptune-200">
+                <a href={`mailto:${s.contact_email}`} className="inline-flex min-h-11 items-center gap-2 text-white/75 transition hover:text-neptune-200">
                   <Mail className="size-4 text-neptune-400" /> {s.contact_email}
                 </a>
               </li>
@@ -49,7 +49,7 @@ export async function Footer() {
           <SocialIcons settings={s} className="mt-3" dark />
         </div>
       </div>
-      <div className="relative border-t border-white/10 py-5 text-center text-xs text-white/45">
+      <div className="relative border-t border-white/10 py-5 text-center text-xs text-white/65">
         © {new Date().getFullYear()} {s.platform_name}. Барлық құқықтар сақталған.
       </div>
     </footer>

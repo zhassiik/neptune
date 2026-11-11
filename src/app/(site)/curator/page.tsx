@@ -1,3 +1,4 @@
+import { StudentPhones } from "@/components/ui/StudentPhones";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Search } from "lucide-react";
@@ -18,7 +19,7 @@ interface Row {
   total_score: number | null;
   max_score: number;
   submitted_at: string | null;
-  profiles: { full_name: string; email: string | null } | null;
+  profiles: { full_name: string; email: string | null; phone?: string | null; parent_phone?: string | null } | null;
   test_variants: { title: string; position: number; kind?: string; course_id: string; courses: { title: string } | null } | null;
 }
 
@@ -35,7 +36,7 @@ export default async function CuratorResultsPage({ searchParams }: { searchParam
   if (courses.length) {
     const query = supabase
       .from("test_attempts")
-      .select("id, total_score, max_score, submitted_at, profiles(full_name, email), test_variants!inner(*, courses(title))")
+      .select("id, total_score, max_score, submitted_at, profiles(*), test_variants!inner(*, courses(title))")
       .eq("status", "submitted")
       .in("test_variants.course_id", course ? [course] : courses.map((c) => c.id))
       .order("submitted_at", { ascending: false })
@@ -106,6 +107,7 @@ export default async function CuratorResultsPage({ searchParams }: { searchParam
                         <td className="px-5 py-3">
                           <div className="font-semibold text-navy-900">{r.profiles?.full_name || "Оқушы"}</div>
                           <div className="text-xs text-slate-500">{r.profiles?.email}</div>
+                          <StudentPhones phone={r.profiles?.phone} parentPhone={r.profiles?.parent_phone} className="mt-1" />
                         </td>
                         <td className="px-5 py-3">
                           <div className="font-medium text-navy-900">{r.test_variants ? variantHeading(r.test_variants) : "—"}</div>

@@ -1,3 +1,5 @@
+import { StudentPhones } from "@/components/ui/StudentPhones";
+import type { Profile } from "@/lib/types";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Ban } from "lucide-react";
@@ -23,7 +25,7 @@ export default async function StudentDevicesPage({ params }: { params: Promise<{
   const supabase = await createClient();
 
   const [{ data: profile }, { data: devices, error }, myDevice, { limit }] = await Promise.all([
-    supabase.from("profiles").select("id, full_name, email, role, created_at, blocked_at").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("*").eq("id", userId).maybeSingle<Profile & { blocked_at: string | null }>(),
     supabase.from("user_devices").select(DEVICE_COLUMNS).eq("user_id", userId).order("is_active", { ascending: false }).order("last_seen_at", { ascending: false }).limit(50).returns<DeviceDbRow[]>(),
     currentDeviceId(),
     getDeviceLimit(),
@@ -50,6 +52,7 @@ export default async function StudentDevicesPage({ params }: { params: Promise<{
               {active}
               {profile.role === "admin" ? " (әкімші — лимитсіз)" : `/${limit}`}
             </b>
+            <StudentPhones phone={profile.phone} parentPhone={profile.parent_phone} className="mt-2 text-sm" />
           </>
         }
         actions={<UserSecurityActions userId={userId} name={profile.full_name || profile.email || ""} blocked={!!profile.blocked_at} isSelf={isSelf} />}

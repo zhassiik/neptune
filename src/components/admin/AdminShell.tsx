@@ -9,6 +9,7 @@ import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 import { ToastProvider } from "./Toast";
 import { SessionGuard } from "@/components/devices/SessionGuard";
+import { SkipLink } from "@/components/layout/SkipLink";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -30,6 +31,7 @@ export function AdminShell({ children, userName, platformName }: { children: Rea
 
   return (
     <div className="min-h-dvh bg-slate-50/70 lg:grid lg:grid-cols-[260px_1fr]">
+      <SkipLink />
       <SessionGuard />
       {/* Десктоп sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-slate-100 bg-white p-5 lg:flex">
@@ -88,7 +90,7 @@ export function AdminShell({ children, userName, platformName }: { children: Rea
         </nav>
       </div>
 
-      <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <main id="main" tabIndex={-1} className="min-w-0 px-4 py-6 outline-none sm:px-6 lg:px-10 lg:py-10">
         <ToastProvider>{children}</ToastProvider>
       </main>
     </div>

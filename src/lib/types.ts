@@ -10,6 +10,9 @@ export interface Profile {
   email: string | null;
   role: UserRole;
   created_at: string;
+  /** Миграция 20261113 іске қосылмаса — undefined */
+  phone?: string | null;
+  parent_phone?: string | null;
 }
 
 export interface LandingStat {

@@ -116,7 +116,8 @@ export function TestRunner({ mode, attemptId, title, questions, initialAnswers, 
 
   const go = (i: number) => {
     goTo(i);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // «Қозғалысты азайту» қосулы болса — бірден, жылжымай
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
   if (!question) {

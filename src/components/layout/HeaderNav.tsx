@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, UserRound, UserRoundPen, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 import { SessionGuard } from "@/components/devices/SessionGuard";
+import { profileCompletionRedirect } from "@/lib/profile-completion";
 
 const links = [
   { href: "/", label: "Басты бет" },
@@ -16,11 +17,24 @@ const links = [
 ];
 
 /** Ғарыштық (күңгірт) header — Neptune стилі */
-export function HeaderNav({ platformName, user }: { platformName: string; user: { name: string; isAdmin: boolean; isCurator?: boolean } | null }) {
+export function HeaderNav({
+  platformName,
+  user,
+}: {
+  platformName: string;
+  user: { name: string; isAdmin: boolean; isCurator?: boolean; needsContacts?: boolean } | null;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   useEffect(() => setOpen(false), [pathname]);
+
+  // Телефондары толтырылмаған оқушы алдымен профильді толтырады
+  const completionHref = user?.needsContacts ? profileCompletionRedirect(pathname) : null;
+  useEffect(() => {
+    if (completionHref) router.replace(completionHref);
+  }, [completionHref, router]);
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const navLinks = user
@@ -58,8 +72,8 @@ export function HeaderNav({ platformName, user }: { platformName: string; user: 
                 </Link>
               )}
               <Link
-                href="/cabinet"
-                title="Менің нәтижелерім"
+                href="/cabinet/profile"
+                title="Менің профилім"
                 className="inline-flex h-9 max-w-52 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3.5 text-sm font-semibold text-white transition hover:border-neptune-400/60 hover:bg-white/15 active:scale-[0.97]"
               >
                 <UserRound className="size-4 shrink-0 text-neptune-300" />
@@ -83,7 +97,7 @@ export function HeaderNav({ platformName, user }: { platformName: string; user: 
 
         <button
           type="button"
-          className="-mr-2 rounded-xl p-2 text-white transition hover:bg-white/10 active:scale-95 md:hidden"
+          className="-mr-2 grid size-11 place-items-center rounded-xl text-white transition hover:bg-white/10 active:scale-95 md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Мәзірді жабу" : "Мәзірді ашу"}
@@ -107,6 +121,9 @@ export function HeaderNav({ platformName, user }: { platformName: string; user: 
             <div className="my-2 h-px bg-white/10" />
             {user ? (
               <>
+                <Link href="/cabinet/profile" className="flex items-center gap-2 rounded-xl px-3 py-3 font-medium text-white/85 hover:bg-white/10">
+                  <UserRoundPen className="size-4 text-neptune-300" /> Менің профилім · <span className="truncate text-white/60">{user.name}</span>
+                </Link>
                 {user.isAdmin && (
                   <Link href="/admin" className="rounded-xl px-3 py-3 font-medium text-white/85 hover:bg-white/10">
                     Админ-панель

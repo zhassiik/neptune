@@ -57,11 +57,11 @@ export default async function VideoPage({ params }: { params: Promise<{ slug: st
         <ButtonLink href={`/courses/${course.slug}`} variant="ghost" size="sm" className="-ml-3">
           <ArrowLeft className="size-4" /> {course.title}
         </ButtonLink>
-        <p className="mt-4 text-sm font-semibold text-brand-600">{variantHeading(variant)}</p>
-        <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">
+        <h1 className="mt-4 text-2xl font-extrabold sm:text-3xl">
           ТАЛДАУ №{variant.position}
           {duration && <span className="ml-3 align-middle text-base font-medium text-slate-500">{duration}</span>}
         </h1>
+        <p className="mt-1 text-sm font-semibold text-brand-600">{variantHeading(variant)}</p>
 
         <div className="mt-6">
           {!access.allowed ? (

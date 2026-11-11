@@ -285,12 +285,11 @@ export function ModuleCard({ module, lessons, videoPanels }: { module: Structure
       <div className="flex flex-wrap items-center gap-4">
         <Planet planet={module.planet} className="w-16" />
         <div className="min-w-0 flex-1">
-          <div className="text-xs font-semibold tracking-wide text-brand-600 uppercase">{PLANETS[module.planet].name}</div>
           <h3 className="truncate text-lg font-extrabold text-navy-900">
             №{module.position}. {module.title}
           </h3>
           <div className="text-sm text-slate-500">
-            {lessons.length} сабақ
+            <span className="font-medium text-brand-600">{PLANETS[module.planet].name}</span> · {lessons.length} сабақ
             {!module.is_published && (
               <span className="ml-2 inline-flex items-center gap-1 text-amber-700">
                 <EyeOff className="size-3.5" /> жасырын

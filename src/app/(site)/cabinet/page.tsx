@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, CheckCircle2, CircleDashed, ClipboardList, Clock, MinusCircle, PlayCircle, Trophy, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleDashed, ClipboardList, Clock, MinusCircle, PlayCircle, ShieldCheck, TrendingUp, Trophy, UserRoundPen, XCircle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/States";
@@ -75,12 +75,17 @@ export default async function CabinetPage() {
 
   return (
     <div className="bg-slate-50/60">
-      <div className="container-page py-10 sm:py-14">
+      <div className="container-page py-8 sm:py-12">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-extrabold sm:text-4xl">Менің нәтижелерім</h1>
-          <ButtonLink href="/cabinet/devices" variant="outline" size="sm">
-            <ShieldCheck className="size-4" /> Менің құрылғыларым
-          </ButtonLink>
+          <h1 className="text-2xl font-extrabold sm:text-3xl">Менің нәтижелерім</h1>
+          <div className="flex flex-wrap gap-2">
+            <ButtonLink href="/cabinet/profile" variant="outline" size="sm">
+              <UserRoundPen className="size-4" /> Менің профилім
+            </ButtonLink>
+            <ButtonLink href="/cabinet/devices" variant="outline" size="sm">
+              <ShieldCheck className="size-4" /> Менің құрылғыларым
+            </ButtonLink>
+          </div>
         </div>
         <p className="mt-2 text-slate-500">
           Сәлем, <b className="text-slate-700">{user.profile?.full_name || user.email}</b>! Мұнда тапсырған барлық нұсқаларыңыз бен қателеріңіздің талдауы сақталады.
@@ -93,7 +98,7 @@ export default async function CabinetPage() {
             {[
               { label: "Тапсырылған нұсқалар", value: submitted.length, icon: ClipboardList },
               { label: "Ең жоғары балл", value: ubtSubmitted.length ? `${best}/50` : "—", icon: Trophy },
-              { label: "Орташа балл", value: ubtSubmitted.length ? `${avg}/50` : "—", icon: Trophy },
+              { label: "Орташа балл", value: ubtSubmitted.length ? `${avg}/50` : "—", icon: TrendingUp },
             ].map((s) => (
               <div key={s.label} className="card flex items-center gap-4 p-5">
                 <span className="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-500">
@@ -115,9 +120,9 @@ export default async function CabinetPage() {
               {active.map((a) => (
                 <div key={a.id} className="card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    {a.test_variants?.courses && <div className="text-xs font-semibold text-brand-600 uppercase">{a.test_variants.courses.title}</div>}
                     <div className="font-semibold text-navy-900">{a.test_variants ? variantHeading(a.test_variants) : "—"}</div>
-                    <div className="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-500">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-slate-500">
+                      {a.test_variants?.courses && <span className="font-semibold text-brand-600">{a.test_variants.courses.title} ·</span>}
                       <Clock className="size-4" /> Басталды: {formatDateTime(a.started_at)}
                     </div>
                   </div>
@@ -168,11 +173,11 @@ export default async function CabinetPage() {
 
                       {/* Нұсқа */}
                       <div className="min-w-0 flex-1">
-                        {v?.courses && <div className="text-xs font-semibold text-brand-600 uppercase">{v.courses.title}</div>}
                         <Link href={`/results/${a.id}`} className="font-display text-lg font-bold text-navy-900 transition hover:text-brand-600">
                           {v ? variantHeading(v) : "Өшірілген нұсқа"}
                         </Link>
                         <div className="mt-1 text-sm text-slate-500">
+                          {v?.courses && <span className="font-semibold text-brand-600">{v.courses.title} · </span>}
                           {formatDateTime(a.submitted_at)} · {formatDuration(a.started_at, a.submitted_at)}
                           {(perVariant.get(a.variant_id) ?? 1) > 1 && <> · {attemptNumber.get(a.id)}-талпыныс</>}
                         </div>

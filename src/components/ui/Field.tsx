@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { cloneElement, forwardRef, isValidElement, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 interface FieldProps {
@@ -11,6 +11,12 @@ interface FieldProps {
 }
 
 export function Field({ label, error, hint, id, children, className }: FieldProps) {
+  // Кеңес пен қате өріске aria-describedby арқылы байланады — экран оқу құралы өрісті таңдағанда оларды айтады
+  const describedBy = [hint && !error ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
+  const control =
+    describedBy && isValidElement<{ "aria-describedby"?: string }>(children) && !(typeof children.type === "string" && !["input", "select", "textarea"].includes(children.type))
+      ? cloneElement(children, { "aria-describedby": [children.props["aria-describedby"], describedBy].filter(Boolean).join(" ") })
+      : children;
   return (
     <div className={className}>
       {label && (
@@ -18,8 +24,12 @@ export function Field({ label, error, hint, id, children, className }: FieldProp
           {label}
         </label>
       )}
-      {children}
-      {hint && !error && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+      {control}
+      {hint && !error && (
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-slate-500">
+          {hint}
+        </p>
+      )}
       {error && (
         <p id={`${id}-error`} className="field-error" role="alert">
           {error}

@@ -1,3 +1,4 @@
+import { StudentPhones } from "@/components/ui/StudentPhones";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Search, Users } from "lucide-react";
@@ -27,7 +28,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
 
   let query = supabase
     .from("profiles")
-    .select("id, full_name, email, role, created_at, blocked_at", { count: "exact" })
+    .select("*", { count: "exact" })
     // «Оқушылар» қойындысында мұғалімдер де көрінеді (белгісімен)
     .filter("role", role === "admin" ? "eq" : "neq", "admin")
     .order("created_at", { ascending: false })
@@ -112,6 +113,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                       {p.role === "curator" && <Badge tone="blue" className="ml-2">Куратор</Badge>}
                       {(p as Profile & { blocked_at?: string | null }).blocked_at && <Badge tone="red" className="ml-2">Бұғатталған</Badge>}
                       <div className="text-slate-500">{p.email}</div>
+                      <StudentPhones phone={p.phone} parentPhone={p.parent_phone} className="mt-1" />
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">{formatDateTime(p.created_at)}</td>
                     <td className="px-5 py-3.5">{s?.count ?? 0}</td>

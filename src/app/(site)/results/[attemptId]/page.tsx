@@ -76,9 +76,9 @@ export default async function ResultPage({
           <div className="flex flex-col items-center gap-8 md:flex-row md:items-center">
             <ScoreDonut score={score} max={attempt.max_score} />
             <div className="w-full flex-1">
-              <p className="text-sm font-semibold text-brand-600">{variant.courses?.title ?? variant.subject}</p>
-              <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{variantHeading(variant)}</h1>
+              <h1 className="text-2xl font-extrabold sm:text-3xl">{variantHeading(variant)}</h1>
               <p className="mt-2 text-sm text-slate-500">
+                <span className="font-semibold text-brand-600">{variant.courses?.title ?? variant.subject}</span> ·{" "}
                 {!isOwner && student && <>Оқушы: <b className="text-slate-700">{student.full_name || student.email}</b> · </>}
                 Тапсырылды: {formatDateTime(attempt.submitted_at)} · Ұзақтығы: {formatDuration(attempt.started_at, attempt.submitted_at)}
               </p>

@@ -63,6 +63,7 @@ Dashboard → **SQL Editor** → **New query** → `supabase/migrations/` іші
 10. `20261110000001_graduates.sql` — басты беттегі «Neptune курсының түлектерінің нәтижелері» (фото, пікір, сертификат)
 11. `20261111000001_course_modules.sql` — курс құрылымы: кіріспе видео, ғаламшар-блоктар (`course_modules`), сабақтар (`module_lessons`), еркін тесттер (`test_variants.kind = 'practice'`)
 12. `20261112000001_curators.sql` — 3 аккаунт түрі: әкімші, куратор, оқушы. `teacher` → `curator`, `course_teachers` → `course_curators`; куратор тек өз курстарындағы оқушылардың нәтижесін көреді және черновик/конспектке белгі қояды; видео — тек әкімші; gmail бойынша шақыру (`curator_invites`)
+13. `20261113000001_profile_contacts.sql` — оқушы профилі: өз телефоны (`phone`) және ата-анасының телефоны (`parent_phone`); тіркелуде сұралады, бұрын тіркелгендер келесі кіргенде толтырады
 
 **B нұсқасы — Supabase CLI:**
 

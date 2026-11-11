@@ -3,7 +3,7 @@ import { Hero } from "@/components/landing/Hero";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { Countdown } from "@/components/landing/Countdown";
 import { Graduates } from "@/components/landing/Graduates";
-import { Features } from "@/components/landing/Features";
+import { SevenReasons } from "@/components/landing/SevenReasons";
 import { Faq } from "@/components/landing/Faq";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Alert } from "@/components/ui/Alert";
@@ -33,10 +33,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       <Hero settings={settings} cta={cta} />
 
-      <Features />
+      <SevenReasons cta={cta} />
 
       <section id="courses" className="container-page scroll-mt-20 pt-6 pb-16 sm:pt-8 sm:pb-24">
-        <SectionHeading eyebrow="Курстар" title="Өз курсыңды таңда" subtitle="Дайындықты бастау үшін курсты таңдаңыз." className="mb-8 sm:mb-10" />
+        <SectionHeading title="Өз курсыңды таңда" subtitle="Дайындықты бастау үшін курсты таңдаңыз." className="mb-8 sm:mb-10" />
         <CourseGrid />
       </section>
 

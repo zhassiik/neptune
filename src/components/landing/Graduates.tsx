@@ -80,12 +80,12 @@ export function Graduates({ items }: { items: GraduateItem[] }) {
   return (
     <section className="space-bg relative isolate overflow-hidden py-16 sm:py-24" aria-labelledby="graduates-title">
       <div className="stars stars-drift" aria-hidden />
-      <div className="nebula-drift pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[120%] w-[80%] rounded-full bg-[radial-gradient(closest-side,rgb(47_107_240/0.22),rgb(124_92_255/0.08)_60%,transparent)] blur-2xl" aria-hidden />
+      <div className="nebula-drift pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[120%] w-[80%] rounded-full bg-[radial-gradient(closest-side,rgb(47_107_240/0.22),rgb(124_92_255/0.08)_60%,transparent)]" aria-hidden />
 
       <div className="relative container-page">
         <div className="mx-auto max-w-3xl text-center">
           <h2 id="graduates-title" className="text-3xl font-extrabold text-white sm:text-5xl">
-            <span className="text-neptune-gradient">Neptune</span> курсының түлектерінің нәтижелері
+            <span className="text-neptune-300">Neptune</span> курсының түлектерінің нәтижелері
           </h2>
           <p className="mt-4 text-white/65">Жоғары балл ғана емес — нақты сертификат пен шынайы пікір. Түлектеріміздің жолы</p>
         </div>
@@ -126,7 +126,7 @@ export function Graduates({ items }: { items: GraduateItem[] }) {
           <div key={`photo-${g.id}`} className="relative mx-auto w-full max-w-[640px] animate-fade-in lg:max-w-none">
             <div className={cn("relative", g.certificateUrl ? "aspect-[6/5]" : "mx-auto aspect-[4/5] max-w-[480px]")}>
               {/* Нептун планетасы, жарқылы және сақинасы */}
-              <div className="absolute top-[8%] left-[2%] aspect-square w-[82%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.32),transparent_68%)] blur-2xl" aria-hidden />
+              <div className="absolute top-[8%] left-[2%] aspect-square w-[82%] rounded-full bg-[radial-gradient(circle,rgb(79_220_251/0.32),transparent_68%)]" aria-hidden />
               <div
                 className="absolute top-[14%] left-[8%] aspect-square w-[70%] rounded-full bg-[radial-gradient(circle_at_32%_28%,var(--color-neptune-300),var(--color-brand-600)_52%,var(--color-navy-800)_100%)] shadow-[0_0_70px_rgb(79_220_251/0.35)]"
                 aria-hidden
@@ -205,12 +205,12 @@ export function Graduates({ items }: { items: GraduateItem[] }) {
                 <button
                   type="button"
                   onClick={() => setCertOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:border-neptune-400/60 hover:bg-white/10 active:scale-[0.97]"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:border-neptune-400/60 hover:bg-white/10 active:scale-[0.97]"
                 >
                   <Award className="size-4 text-amber-300" /> Сертификатты көру
                 </button>
               )}
-              {items.length > 1 && <span className="text-sm text-white/40">{index + 1} / {items.length}</span>}
+              {items.length > 1 && <span className="text-sm text-white/70">{index + 1} / {items.length}</span>}
             </div>
           </div>
         </div>

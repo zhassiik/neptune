@@ -59,6 +59,33 @@
     @apply bg-white text-slate-800 antialiased;
     font-feature-settings: "cv11", "ss01";
   }
+  /* Тақырыптар теңгерімді, мәтін «жесір» сөзсіз бөлінеді */
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+  p, li, dd {
+    text-wrap: pretty;
+  }
+  /* Браузердің өз беттері де Neptune түсінде: белгілеу, курсор, құсбелгі, сызу */
+  :root {
+    accent-color: var(--color-brand-500);
+    scrollbar-color: rgb(10 18 56 / 0.3) transparent;
+  }
+  ::selection {
+    background: var(--color-brand-200);
+    color: var(--color-navy-900);
+  }
+  .space-bg ::selection,
+  footer ::selection {
+    background: rgb(79 220 251 / 0.35);
+    color: white;
+  }
+  input, textarea {
+    caret-color: var(--color-brand-500);
+  }
+  a {
+    text-underline-offset: 0.2em;
+  }
   h1, h2, h3, h4 {
     @apply font-display text-navy-900;
     letter-spacing: -0.015em;
@@ -68,12 +95,6 @@
   }
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), label[for] {
     cursor: pointer;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-    }
   }
 }
 
@@ -121,17 +142,27 @@
     background-size: 320px 280px;
     animation: var(--animate-twinkle);
   }
-  /* Ғаламшардың айналуы: бет текстурасы көлденең қайталанады және жылжиды */
+  /*
+   * Ғаламшардың айналуы: текстура плиткасы (шардан 2 есе кең) көлденең қайталанады.
+   * Қабат 4 плитка емес, 2 плитка ені (400%) — бір плиткаға transform-мен жылжиды:
+   * бет қайта салынбайды, жылжуды видеокарта атқарады.
+   */
   .planet-surface {
-    background-size: 200% 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 400%;
+    background-size: 50% 100%;
     background-repeat: repeat-x;
     animation: planet-spin 28s linear infinite;
   }
   @keyframes planet-spin {
-    to { background-position: -200% 0; }
+    to { transform: translate3d(-50%, 0, 0); }
   }
-  /* Жұлдыздардың баяу жылжуы (жыпылықтаумен бірге) */
+  /* Жұлдыздардың баяу жылжуы: қабат бір кезеңге (320×280) үлкейтіліп, transform-мен жылжиды */
   .stars-drift {
+    inset: -280px -320px 0 0;
     animation: var(--animate-twinkle), stars-drift 120s linear infinite;
   }
   /* Үзік сызықты орбитаның «ағуы» */
@@ -143,7 +174,7 @@
     animation: nebula-drift 14s ease-in-out infinite;
   }
   @keyframes stars-drift {
-    to { background-position: -320px 280px; }
+    to { transform: translate3d(-320px, 280px, 0); }
   }
   @keyframes dash-flow {
     to { stroke-dashoffset: -150; }
@@ -153,12 +184,50 @@
     50% { opacity: 1; transform: translate(-42%, -54%) scale(1.12); }
   }
   .glass-dark {
-    @apply border border-white/10 bg-white/[0.06] backdrop-blur-md;
+    @apply border border-white/10 bg-[rgb(20_30_80/0.55)];
   }
   .text-neptune-gradient {
     background: linear-gradient(90deg, var(--color-neptune-300), var(--color-brand-400) 60%, #a78bfa);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+}
+
+/* ---------- Қозғалысты азайту: безендіру тоқтайды, мағыналы өзгерістер сақталады ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  /* Безендіру: ғаламшарлар, жұлдыздар, тұман, орбиталар — тұрақты күйде */
+  .planet-surface,
+  .stars,
+  .stars-drift,
+  .nebula-drift,
+  .dash-flow,
+  .animate-orbit {
+    animation: none !important;
+  }
+  /* Пайда болу: орын ауыстырусыз, тек жылдам мөлдірлік — күй өзгергені көрінеді */
+  .animate-fade-in,
+  .animate-pop-in {
+    animation: reduced-fade 0.15s ease-out both !important;
+  }
+  @keyframes reduced-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  /* Жүктелу белгісі айналуын жалғастырады (баяуырақ) — әйтпесе «қатып қалған» сияқты */
+  .animate-spin {
+    animation-duration: 1.6s !important;
+  }
+  /* Үстінен өткенде/басқанда секіру мен үлкею — тек түс/көлеңке өзгерісі қалады */
+  .hover\:-translate-y-1:hover,
+  .active\:scale-90:active,
+  .active\:scale-95:active,
+  .active\:scale-\[0\.97\]:active,
+  .active\:scale-\[0\.98\]:active {
+    translate: none !important;
+    scale: none !important;
   }
 }
